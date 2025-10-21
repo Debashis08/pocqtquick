@@ -1,42 +1,30 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(pocqtquick VERSION 0.1 LANGUAGES CXX)
+# Define the project name, version, and language.
+project(QtCounterApp VERSION 1.0 LANGUAGES CXX)
 
+# Set the C++ standard to C++17.
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick)
+# These settings are crucial for Qt projects with CMake. They automate the
+# handling of Qt's meta-object compiler (moc), user interface compiler (uic),
+# and resource compiler (rcc).
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
 
-qt_standard_project_setup(REQUIRES 6.8)
+# Find the required Qt 6 packages. CMake will locate the necessary libraries
+# and headers for these components. We also include Test for later.
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Test)
 
-qt_add_executable(apppocqtquick
-    main.cpp
-)
+# Include the source subdirectory. CMake will process the CMakeLists.txt
+# file located in the 'source' folder.
+add_subdirectory(source)
 
-qt_add_qml_module(apppocqtquick
-    URI pocqtquick
-    VERSION 1.0
-    QML_FILES
-        Main.qml
-)
+# Enable the CTest testing framework for the project.
+enable_testing()
 
-# Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
-# If you are developing for iOS or macOS you should consider setting an
-# explicit, fixed bundle identifier manually though.
-set_target_properties(apppocqtquick PROPERTIES
-#    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.apppocqtquick
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-    MACOSX_BUNDLE TRUE
-    WIN32_EXECUTABLE TRUE
-)
-
-target_link_libraries(apppocqtquick
-    PRIVATE Qt6::Quick
-)
-
-include(GNUInstallDirs)
-install(TARGETS apppocqtquick
-    BUNDLE DESTINATION .
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+# Include the test subdirectory. CMake will process the CMakeLists.txt
+# file located in the 'test' folder.
+add_subdirectory(test)
