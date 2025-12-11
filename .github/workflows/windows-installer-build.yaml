@@ -63,36 +63,28 @@ jobs:
         run: |
           windeployqt --release --no-translations --no-opengl-sw --qmldir source\ui installer\packages\com.pocqtquick\data\counter_app.exe
 
-      # NEW STEP: Find binarycreator.exe and add it to PATH
-      - name: Add Installer Framework to PATH
-        shell: pwsh  # Switch to PowerShell for this search
+      # 7. Generate the Installer (FAST METHOD)
+      - name: Create Installer
+        shell: cmd
         run: |
-          # Search for binarycreator.exe in the installation directories
-          Write-Host "Searching for binarycreator.exe..."
-          $exePath = Get-ChildItem -Path "D:/a" -Recurse -Filter "binarycreator.exe" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty DirectoryName -First 1
+          :: The action stores the tools path in %IQTA_TOOLS%
+          :: usually: C:\hostedtoolcache\windows\Qt\Tools
           
-          if (-not $exePath) {
-              # Fallback search if not found in D:/a
-              $exePath = Get-ChildItem -Path "C:/" -Recurse -Filter "binarycreator.exe" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty DirectoryName -First 1
-          }
-
-          if ($exePath) {
-              Write-Host "Found binarycreator at: $exePath"
-              # Append to GITHUB_PATH so subsequent steps can use it
-              echo "$exePath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          } else {
-              Write-Error "Could not find binarycreator.exe. Verify 'tools_ifw' is in the install-qt-action."
-              exit 1
-          }
-
-      # 7. Generate the Installer (Now it should work)
-      - name: Create Installer
-        run: |
-          binarycreator -c installer\config\config.xml -p installer\packages pocqtquick.exe
-      # 7. Generate the Installer
-      - name: Create Installer
-        run: |
-          binarycreator -c installer\config\config.xml -p installer\packages pocqtquick.exe
+          echo "Tools Path is: %IQTA_TOOLS%"
+          
+          :: We look for the binarycreator inside that folder.
+          :: The path pattern is usually: [ToolsPath]\QtInstallerFramework\[Version]\bin\binarycreator.exe
+          :: Since we don't know the exact version number folder (e.g. 4.8), we use a wildcard match
+          
+          for /d %%d in ("%IQTA_TOOLS%\QtInstallerFramework\*") do (
+            if exist "%%d\bin\binarycreator.exe" (
+              "%%d\bin\binarycreator.exe" -c installer\config\config.xml -p installer\packages pocqtquick.exe
+              exit 0
+            )
+          )
+          
+          echo "Error: binarycreator.exe not found in %IQTA_TOOLS%"
+          exit 1
 
       # 8. Upload the result
       - name: Upload Installer
