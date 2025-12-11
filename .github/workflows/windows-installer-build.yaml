@@ -65,7 +65,7 @@ jobs:
 
       # 7. Generate the Installer
       - name: Create Installer
-        shell: cmd
+        shell: pwsh
         run: |
           # 1. Construct the path using the GitHub Workspace variable
           # This looks like: D:\a\pocqtquick\pocqtquick\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe
