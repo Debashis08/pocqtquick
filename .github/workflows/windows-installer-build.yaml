@@ -63,6 +63,32 @@ jobs:
         run: |
           windeployqt --release --no-translations --no-opengl-sw --qmldir source\ui installer\packages\com.pocqtquick\data\counter_app.exe
 
+      # NEW STEP: Find binarycreator.exe and add it to PATH
+      - name: Add Installer Framework to PATH
+        shell: pwsh  # Switch to PowerShell for this search
+        run: |
+          # Search for binarycreator.exe in the installation directories
+          Write-Host "Searching for binarycreator.exe..."
+          $exePath = Get-ChildItem -Path "D:/a" -Recurse -Filter "binarycreator.exe" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty DirectoryName -First 1
+          
+          if (-not $exePath) {
+              # Fallback search if not found in D:/a
+              $exePath = Get-ChildItem -Path "C:/" -Recurse -Filter "binarycreator.exe" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty DirectoryName -First 1
+          }
+
+          if ($exePath) {
+              Write-Host "Found binarycreator at: $exePath"
+              # Append to GITHUB_PATH so subsequent steps can use it
+              echo "$exePath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          } else {
+              Write-Error "Could not find binarycreator.exe. Verify 'tools_ifw' is in the install-qt-action."
+              exit 1
+          }
+
+      # 7. Generate the Installer (Now it should work)
+      - name: Create Installer
+        run: |
+          binarycreator -c installer\config\config.xml -p installer\packages pocqtquick.exe
       # 7. Generate the Installer
       - name: Create Installer
         run: |
