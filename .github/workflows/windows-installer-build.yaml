@@ -44,13 +44,17 @@ jobs:
           cd build
           ctest -C Release --output-on-failure
 
-     # 5. Prepare Packaging (Bulletproof Method)
+     # 5. Prepare Packaging
       - name: Copy Files for Packaging
         run: |
-          # Use cmake to create the directory (automatically makes all parent folders)
+          :: Create the directory (:: is the comment syntax for cmd)
           cmake -E make_directory "installer/packages/com.pocqtquick/data"
           
-          # Use cmake to copy the file (works with forward or backslashes)
+          :: DEBUG: List files to find the correct exe name and path
+          echo "Listing build directory contents:"
+          dir /s build
+          
+          :: Copy the file (Update the exe name if needed!)
           cmake -E copy "build/Release/counter_app.exe" "installer/packages/com.pocqtquick/data/"
 
       # 6. Run Windeployqt
