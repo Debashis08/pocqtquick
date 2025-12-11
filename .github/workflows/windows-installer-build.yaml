@@ -44,13 +44,14 @@ jobs:
           cd build
           ctest -C Release --output-on-failure
 
-      # 5. Prepare Packaging
+     # 5. Prepare Packaging (Bulletproof Method)
       - name: Copy Files for Packaging
         run: |
-          if not exist installer\packages\com.pocqtquick\data mkdir installer\packages\com.pocqtquick\data
+          # Use cmake to create the directory (automatically makes all parent folders)
+          cmake -E make_directory "installer/packages/com.pocqtquick/data"
           
-          :: MSVC puts the exe inside a "Release" folder
-          copy build\Release\counter_app.exe installer\packages\com.pocqtquick\data\
+          # Use cmake to copy the file (works with forward or backslashes)
+          cmake -E copy "build/Release/counter_app.exe" "installer/packages/com.pocqtquick/data/"
 
       # 6. Run Windeployqt
       # Note: We removed --compiler-runtime because MSVC uses system installed runtimes
