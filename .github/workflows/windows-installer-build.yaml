@@ -63,28 +63,26 @@ jobs:
         run: |
           windeployqt --release --no-translations --no-opengl-sw --qmldir source\ui installer\packages\com.pocqtquick\data\counter_app.exe
 
-      # 7. Generate the Installer (FAST METHOD)
+      # 7. Generate the Installer
       - name: Create Installer
-        shell: cmd
+        shell: pwsh
         run: |
-          :: The action stores the tools path in %IQTA_TOOLS%
-          :: usually: C:\hostedtoolcache\windows\Qt\Tools
-          
-          echo "Tools Path is: %IQTA_TOOLS%"
-          
-          :: We look for the binarycreator inside that folder.
-          :: The path pattern is usually: [ToolsPath]\QtInstallerFramework\[Version]\bin\binarycreator.exe
-          :: Since we don't know the exact version number folder (e.g. 4.8), we use a wildcard match
-          
-          for /d %%d in ("%IQTA_TOOLS%\QtInstallerFramework\*") do (
-            if exist "%%d\bin\binarycreator.exe" (
-              "%%d\bin\binarycreator.exe" -c installer\config\config.xml -p installer\packages pocqtquick.exe
-              exit 0
-            )
-          )
-          
-          echo "Error: binarycreator.exe not found in %IQTA_TOOLS%"
-          exit 1
+          :: 1. Construct the path using the GitHub Workspace variable
+          :: This looks like: D:\a\pocqtquick\pocqtquick\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe
+          $toolPath = "${{ github.workspace }}\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe"
+
+          :: 2. Resolve the wildcard (*) to the actual path
+          $binaryCreator = Get-Item $toolPath | Select-Object -ExpandProperty FullName -First 1
+
+          if (-not $binaryCreator) {
+              Write-Error "Could not find binarycreator.exe at $toolPath"
+              exit 1
+          }
+
+          Write-Host "Using Binary Creator: $binaryCreator"
+
+          :: 3. Run the command
+          & $binaryCreator -c installer\config\config.xml -p installer\packages pocqtquick.exe
 
       # 8. Upload the result
       - name: Upload Installer
