@@ -53,7 +53,7 @@ jobs:
         run: |
           windeployqt --release --no-translations --no-opengl-sw --qmldir source\ui installer\packages\com.pocqtquick\data\counter_app.exe
 
-            # 7. Create Installer (find IFW path using install-qt-action variables)
+      # 7. Create Installer (find IFW path using install-qt-action variables)
       - name: Create Installer
         shell: pwsh
         run: |
