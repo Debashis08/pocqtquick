@@ -53,33 +53,33 @@ jobs:
         run: |
           windeployqt --release --no-translations --no-opengl-sw --qmldir source\ui installer\packages\com.pocqtquick\data\counter_app.exe
 
+      - name: Install Qt Installer Framework Manually
+        shell: pwsh
+        run: |
+          Write-Host "Downloading Qt Installer Framework..."
+
+          $installerUrl = "https://download.qt.io/official_releases/qt-installer-framework/4.6.1/QtInstallerFramework-windows-x64-4.6.1.exe"
+          $installerPath = "$env:USERPROFILE\ifw-installer.exe"
+
+          Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath
+
+          Write-Host "Installing Qt IFW silently..."
+          & $installerPath --silent --root "$env:USERPROFILE\QtIFW"
+
       # 7. Create Installer (find IFW path using install-qt-action variables)
       - name: Create Installer
         shell: pwsh
         run: |
-          Write-Host "Searching for Qt Installer Framework..."
+          $binaryCreator = "$env:USERPROFILE\QtIFW\bin\binarycreator.exe"
 
-          $ifwRoot = Join-Path "${{ github.workspace }}" "Qt\Tools\QtInstallerFramework"
-          if (-not (Test-Path $ifwRoot)) {
-            Write-Error "Qt Installer Framework not found at $ifwRoot"
+          if (-not (Test-Path $binaryCreator)) {
+            Write-Error "binarycreator.exe not found at: $binaryCreator"
             exit 1
           }
 
-          Write-Host "IFW root found: $ifwRoot"
+          Write-Host "Using binarycreator: $binaryCreator"
 
-          # Find binarycreator.exe in all version folders
-          $binaryCreator = Get-ChildItem -Path $ifwRoot -Recurse -Filter "binarycreator.exe" | Select-Object -First 1
-
-          if (-not $binaryCreator) {
-            Write-Error "binarycreator.exe not found anywhere under $ifwRoot"
-            exit 1
-          }
-
-          Write-Host "Using binarycreator: $($binaryCreator.FullName)"
-
-          & $binaryCreator.FullName -c installer\config\config.xml -p installer\packages pocqtquick.exe
-
-
+          & $binaryCreator -c installer\config\config.xml -p installer\packages pocqtquick.exe
 
       # 8. Upload Installer Artifact
       - name: Upload Installer
