@@ -22,7 +22,7 @@ jobs:
           target: 'desktop'
           arch: 'win64_msvc2022_64'
           modules: 'qt5compat'
-          tools: 'tools_ifw'        # <<--- IMPORTANT: installs Qt Installer Framework
+          tools: 'tools_ifw,ifw-4.8'        # <<--- IMPORTANT: installs Qt Installer Framework
 
       # 2. Setup MSVC Environment
       - name: Setup MSVC
@@ -57,15 +57,7 @@ jobs:
       - name: Create Installer
         shell: pwsh
         run: |
-          Write-Host "Looking for Qt IFW..."
-
-          $ifw = $Env:IFW_ROOT
-
-          if (-not $ifw) {
-            Write-Error "Qt IFW not found. IFW_ROOT variable is missing."
-            exit 1
-          }
-
+          $ifw = "C:\Users\runneradmin\Qt\Tools\QtInstallerFramework\4.8"
           $binaryCreator = Join-Path $ifw "bin/binarycreator.exe"
 
           if (-not (Test-Path $binaryCreator)) {
@@ -74,7 +66,6 @@ jobs:
           }
 
           Write-Host "Using Binary Creator: $binaryCreator"
-
           & $binaryCreator -c installer\config\config.xml -p installer\packages pocqtquick.exe
 
 
