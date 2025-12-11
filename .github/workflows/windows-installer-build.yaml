@@ -46,17 +46,37 @@ jobs:
       - name: Copy Files for Packaging
         run: |
           cmake -E make_directory "installer/packages/com.pocqtquick/data"
-          :: Copy the file (Update the exe name if needed!)
           cmake -E copy "build/source/Release/counter_app.exe" "installer/packages/com.pocqtquick/data/"
 
+      # 6. Run windeployqt
       - name: Run Windeployqt
         run: |
           windeployqt --release --no-translations --no-opengl-sw --qmldir source\ui installer\packages\com.pocqtquick\data\counter_app.exe
 
-      # 7. Create Installer (binarycreator now available in PATH)
+            # 7. Create Installer (find IFW path using install-qt-action variables)
       - name: Create Installer
+        shell: pwsh
         run: |
-          binarycreator -c installer\config\config.xml -p installer\packages pocqtquick.exe
+          Write-Host "Looking for Qt IFW..."
+
+          $ifw = $Env:IFW_ROOT
+
+          if (-not $ifw) {
+            Write-Error "Qt IFW not found. IFW_ROOT variable is missing."
+            exit 1
+          }
+
+          $binaryCreator = Join-Path $ifw "bin/binarycreator.exe"
+
+          if (-not (Test-Path $binaryCreator)) {
+            Write-Error "binarycreator.exe not found at: $binaryCreator"
+            exit 1
+          }
+
+          Write-Host "Using Binary Creator: $binaryCreator"
+
+          & $binaryCreator -c installer\config\config.xml -p installer\packages pocqtquick.exe
+
 
       # 8. Upload Installer Artifact
       - name: Upload Installer
