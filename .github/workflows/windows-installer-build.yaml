@@ -51,8 +51,8 @@ jobs:
           cmake -E make_directory "installer/packages/com.pocqtquick/data"
           
           :: DEBUG: List files to find the correct exe name and path
-          echo "Listing build directory contents:"
-          dir /s build
+          :: echo "Listing build directory contents:"
+          :: dir /s build
           
           :: Copy the file (Update the exe name if needed!)
           cmake -E copy "build/Release/counter_app.exe" "installer/packages/com.pocqtquick/data/"
