@@ -3,7 +3,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: windows-2022 # Explicitly use Windows 2022 image
+    runs-on: windows-2022
 
     defaults:
       run:
@@ -13,29 +13,27 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Install Qt 6.10.0 for MSVC 2022
+      # 1. Install Qt 6.10.0 + Installer Framework (Required for binarycreator)
       - name: Install Qt
-        uses: jurplel/install-qt-action@v3 # v4 is not standard yet, v3 is safe
+        uses: jurplel/install-qt-action@v3
         with:
           version: '6.10.0'
           host: 'windows'
           target: 'desktop'
-          arch: 'win64_msvc2022_64'      # <--- USING MSVC NOW
-          modules: 'qt5compat'           # Add modules if your app needs them
+          arch: 'win64_msvc2022_64'
+          modules: 'qt5compat'
+          tools: 'tools_ifw'        # <<--- IMPORTANT: installs Qt Installer Framework
 
-      # 2. Setup MSVC Environment (Critical for finding the compiler)
+      # 2. Setup MSVC Environment
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
-      # 3. Configure and Build (The MSVC Way)
+      # 3. Configure and Build
       - name: Build Application
         run: |
           mkdir build
           cd build
-          :: We use "Visual Studio 17 2022" generator
           cmake .. -G "Visual Studio 17 2022" -A x64
-          
-          :: Build the Release configuration
           cmake --build . --config Release
 
       # 4. Run Unit Tests
@@ -44,47 +42,23 @@ jobs:
           cd build
           ctest -C Release --output-on-failure
 
-     # 5. Prepare Packaging
+      # 5. Prepare Packaging
       - name: Copy Files for Packaging
         run: |
-          :: Create the directory (:: is the comment syntax for cmd)
           cmake -E make_directory "installer/packages/com.pocqtquick/data"
-          
-          :: DEBUG: List files to find the correct exe name and path
-          :: echo "Listing build directory contents:"
-          :: dir /s build
-          
           :: Copy the file (Update the exe name if needed!)
           cmake -E copy "build/source/Release/counter_app.exe" "installer/packages/com.pocqtquick/data/"
 
-      # 6. Run Windeployqt
-      # Note: We removed --compiler-runtime because MSVC uses system installed runtimes
       - name: Run Windeployqt
         run: |
           windeployqt --release --no-translations --no-opengl-sw --qmldir source\ui installer\packages\com.pocqtquick\data\counter_app.exe
 
-      # 7. Generate the Installer
+      # 7. Create Installer (binarycreator now available in PATH)
       - name: Create Installer
-        shell: pwsh
         run: |
-          # 1. Construct the path using the GitHub Workspace variable
-          # This looks like: D:\a\pocqtquick\pocqtquick\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe
-          $toolPath = "${{ github.workspace }}\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe"
+          binarycreator -c installer\config\config.xml -p installer\packages pocqtquick.exe
 
-          # 2. Resolve the wildcard (*) to the actual path
-          $binaryCreator = Get-Item $toolPath | Select-Object -ExpandProperty FullName -First 1
-
-          if (-not $binaryCreator) {
-              Write-Error "Could not find binarycreator.exe at $toolPath"
-              exit 1
-          }
-
-          Write-Host "Using Binary Creator: $binaryCreator"
-
-          # 3. Run the command
-          & $binaryCreator -c installer\config\config.xml -p installer\packages pocqtquick.exe
-
-      # 8. Upload the result
+      # 8. Upload Installer Artifact
       - name: Upload Installer
         uses: actions/upload-artifact@v4
         with:
