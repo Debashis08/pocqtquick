@@ -67,11 +67,11 @@ jobs:
       - name: Create Installer
         shell: pwsh
         run: |
-          :: 1. Construct the path using the GitHub Workspace variable
-          :: This looks like: D:\a\pocqtquick\pocqtquick\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe
+          # 1. Construct the path using the GitHub Workspace variable
+          # This looks like: D:\a\pocqtquick\pocqtquick\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe
           $toolPath = "${{ github.workspace }}\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe"
 
-          :: 2. Resolve the wildcard (*) to the actual path
+          # 2. Resolve the wildcard (*) to the actual path
           $binaryCreator = Get-Item $toolPath | Select-Object -ExpandProperty FullName -First 1
 
           if (-not $binaryCreator) {
@@ -81,7 +81,7 @@ jobs:
 
           Write-Host "Using Binary Creator: $binaryCreator"
 
-          :: 3. Run the command
+          # 3. Run the command
           & $binaryCreator -c installer\config\config.xml -p installer\packages pocqtquick.exe
 
       # 8. Upload the result
