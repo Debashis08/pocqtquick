@@ -55,7 +55,7 @@ jobs:
           :: dir /s build
           
           :: Copy the file (Update the exe name if needed!)
-          cmake -E copy "build/Release/counter_app.exe" "installer/packages/com.pocqtquick/data/"
+          cmake -E copy "build/source/Release/counter_app.exe" "installer/packages/com.pocqtquick/data/"
 
       # 6. Run Windeployqt
       # Note: We removed --compiler-runtime because MSVC uses system installed runtimes
