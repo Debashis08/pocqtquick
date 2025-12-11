@@ -22,7 +22,7 @@ jobs:
           target: 'desktop'
           arch: 'win64_msvc2022_64'
           modules: 'qt5compat'
-          tools: 'tools_ifw,ifw-4.8'        # <<--- IMPORTANT: installs Qt Installer Framework
+          tools: 'tools_ifw'
 
       # 2. Setup MSVC Environment
       - name: Setup MSVC
@@ -57,16 +57,28 @@ jobs:
       - name: Create Installer
         shell: pwsh
         run: |
-          $ifw = "C:\Users\runneradmin\Qt\Tools\QtInstallerFramework\4.8"
-          $binaryCreator = Join-Path $ifw "bin/binarycreator.exe"
+          Write-Host "Searching for Qt Installer Framework..."
 
-          if (-not (Test-Path $binaryCreator)) {
-            Write-Error "binarycreator.exe not found at: $binaryCreator"
+          $ifwRoot = Join-Path "${{ github.workspace }}" "Qt\Tools\QtInstallerFramework"
+          if (-not (Test-Path $ifwRoot)) {
+            Write-Error "Qt Installer Framework not found at $ifwRoot"
             exit 1
           }
 
-          Write-Host "Using Binary Creator: $binaryCreator"
-          & $binaryCreator -c installer\config\config.xml -p installer\packages pocqtquick.exe
+          Write-Host "IFW root found: $ifwRoot"
+
+          # Find binarycreator.exe in all version folders
+          $binaryCreator = Get-ChildItem -Path $ifwRoot -Recurse -Filter "binarycreator.exe" | Select-Object -First 1
+
+          if (-not $binaryCreator) {
+            Write-Error "binarycreator.exe not found anywhere under $ifwRoot"
+            exit 1
+          }
+
+          Write-Host "Using binarycreator: $($binaryCreator.FullName)"
+
+          & $binaryCreator.FullName -c installer\config\config.xml -p installer\packages pocqtquick.exe
+
 
 
       # 8. Upload Installer Artifact
