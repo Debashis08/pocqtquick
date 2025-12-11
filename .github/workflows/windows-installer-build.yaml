@@ -18,7 +18,7 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_mingw'       # Changed from msvc to mingw
-          tools: 'tools_ifw'
+          tools: 'tools_mingw,tools_ifw'
 
       # 3. Compile the Application (Using MinGW Makefiles)
       - name: Build Application
