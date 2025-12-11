@@ -1,0 +1,60 @@
+name: windows-installer-build
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      # 1. Get your source code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Install Qt 6.9.3 (MinGW 64-bit) & Installer Framework
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.9.3'          # Updated to your version
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw'       # Changed from msvc to mingw
+          tools: 'tools_ifw'
+
+      # 3. Compile the Application (Using MinGW Makefiles)
+      - name: Build Application
+        run: |
+          mkdir build
+          cd build
+          # MinGW uses "MinGW Makefiles" generator
+          cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+          mingw32-make
+
+      # 4. Run Unit Tests (New Step)
+      - name: Run Unit Tests
+        run: |
+          cd build
+          # ctest runs all tests registered in your CMakeLists.txt
+          ctest -C Release --output-on-failure
+
+      # 5. Prepare Packaging (MinGW puts .exe in build root, not build/release)
+      - name: Copy Files for Packaging
+        run: |
+          # Note: Path is now 'build\YourApp.exe', not 'build\release\...'
+          copy build\counter_app.exe installer\packages\com.pocqtquick\data\
+
+      # 6. Run Windeployqt
+      - name: Run Windeployqt
+        run: |
+          windeployqt --release --no-translations --no-opengl-sw --no-system-d3d-compiler --qmldir "source\ui" installer\packages\com.pocqtquick\data\counter_app.exe
+
+      # 7. Generate the Installer
+      - name: Create Installer
+        run: |
+          binarycreator -c installer\config\config.xml -p installer\packages pocqtquick.exe
+
+      # 8. Upload the result
+      - name: Upload Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-Installer
+          path: pocqtquick.exe
