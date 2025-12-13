@@ -5,7 +5,7 @@ on: [push, pull_request]
 env:
   # Configuration Variables (Change these to match your project)
   QT_VERSION: '6.10.1'
-  QT_ARCH: 'win64_msvc2019_64'
+  QT_ARCH: 'win64_msvc2022_64'
   QT_IFW_VERSION: '4.10.0'
   BUILD_TYPE: 'Release'
   
