@@ -1,32 +1,46 @@
 name: Windows Installer Build (MSVC)
+
 on: [push, pull_request]
+
+env:
+  # Qt Settings
+  QT_VERSION: '6.10.1'
+  QT_ARCH: 'win64_msvc2022_64'
+  
+  # Project Specifics
+  APP_EXECUTABLE: 'counter_app.exe'
+  PACKAGE_DOMAIN: 'com.pocqtquick'
+  # Note: Adjust this build path if your CMakeLists.txt structure changes
+  BUILD_EXE_PATH: 'build/source/Release/counter_app.exe' 
+  QML_SOURCE_DIR: 'source/ui'
 
 jobs:
   build:
     runs-on: windows-2022
 
+    # Using Bash on Windows makes path handling much safer
     defaults:
       run:
-        shell: cmd
+        shell: bash
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Install Qt 6.10.0 + Installer Framework (Required for binarycreator)
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '6.10.0'
-          host: 'windows'
-          target: 'desktop'
-          arch: 'win64_msvc2022_64'
-          modules: 'qt5compat'
-          tools: 'tools_ifw'
-
-      # 2. Setup MSVC Environment
+      # 1. Setup MSVC Environment
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
+
+      # 2. Install Qt + Installer Framework (IFW)
+      # 'tools_ifw' automatically installs the latest IFW (approx 4.10.x) and adds it to PATH
+      - name: Install Qt and IFW
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: ${{ env.QT_ARCH }}
+          aqtinstall-version: '>=3.1.0'
+          modules: 'qt5compat'       # Kept from your original snippet
+          tools: 'tools_ifw'         # This replaces the manual download script
 
       # 3. Configure and Build
       - name: Build Application
@@ -42,48 +56,38 @@ jobs:
           cd build
           ctest -C Release --output-on-failure
 
-      # 5. Prepare Packaging
+      # 5. Stage Files for Installer
       - name: Copy Files for Packaging
         run: |
-          cmake -E make_directory "installer/packages/com.pocqtquick/data"
-          cmake -E copy "build/source/Release/counter_app.exe" "installer/packages/com.pocqtquick/data/"
+          # Define target directory
+          TARGET_DIR="installer/packages/${{ env.PACKAGE_DOMAIN }}/data"
+          
+          # Create directory structure
+          mkdir -p "$TARGET_DIR"
+          
+          # Copy executable
+          cp "${{ env.BUILD_EXE_PATH }}" "$TARGET_DIR/"
 
-      # 6. Run windeployqt
+      # 6. Run Windeployqt
       - name: Run Windeployqt
         run: |
-          windeployqt --release --no-translations --no-opengl-sw --qmldir source\ui installer\packages\com.pocqtquick\data\counter_app.exe
+          TARGET_EXE="installer/packages/${{ env.PACKAGE_DOMAIN }}/data/${{ env.APP_EXECUTABLE }}"
+          
+          # Added --compiler-runtime to ensure VCRUNTIME140.dll is included
+          windeployqt --release --compiler-runtime --no-translations --no-opengl-sw --qmldir ${{ env.QML_SOURCE_DIR }} "$TARGET_EXE"
 
-      - name: Install Qt Installer Framework Manually
-        shell: pwsh
-        run: |
-          Write-Host "Downloading Qt Installer Framework..."
-
-          $installerUrl = "https://download.qt.io/official_releases/qt-installer-framework/4.6.1/QtInstallerFramework-windows-x64-4.6.1.exe"
-          $installerPath = "$env:USERPROFILE\ifw-installer.exe"
-
-          Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath
-
-          Write-Host "Installing Qt IFW silently..."
-          & $installerPath --silent --root "$env:USERPROFILE\QtIFW"
-
-      # 7. Create Installer (find IFW path using install-qt-action variables)
+      # 7. Create Installer
       - name: Create Installer
-        shell: pwsh
         run: |
-          $binaryCreator = "$env:USERPROFILE\QtIFW\bin\binarycreator.exe"
-
-          if (-not (Test-Path $binaryCreator)) {
-            Write-Error "binarycreator.exe not found at: $binaryCreator"
-            exit 1
-          }
-
-          Write-Host "Using binarycreator: $binaryCreator"
-
-          & $binaryCreator -c installer\config\config.xml -p installer\packages pocqtquick.exe
+          # binarycreator is now automatically in the PATH
+          cd installer
+          
+          echo "Generating installer..."
+          binarycreator --offline-installer "pocqtquick.exe" -c config/config.xml -p packages/
 
       # 8. Upload Installer Artifact
       - name: Upload Installer
         uses: actions/upload-artifact@v4
         with:
           name: Windows-Installer
-          path: pocqtquick.exe
+          path: installer/pocqtquick.exe
