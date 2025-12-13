@@ -38,7 +38,7 @@ jobs:
         with:
           version: ${{ env.QT_VERSION }}
           arch: ${{ env.QT_ARCH }}
-          aqtversion: '3.1.6'
+          aqtversion: '>=3.1.6'
           modules: 'qt5compat'       # Kept from your original snippet
           tools: 'tools_ifw'         # This replaces the manual download script
 
