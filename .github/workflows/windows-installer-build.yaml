@@ -85,7 +85,7 @@ jobs:
           cd installer
           
           # 2. Execute using the '&' operator (required in PS for variables containing paths)
-          & $binCreator --offline-installer "pocqtquick.exe" -c config\config.xml -p packages\
+          & $binCreator -c config\config.xml -p packages\ pocqtquick.exe
 
       - name: Upload Installer Artifact
         uses: actions/upload-artifact@v4
