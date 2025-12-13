@@ -3,14 +3,12 @@ name: Windows Installer Build (MSVC)
 on: [push, pull_request]
 
 env:
-  # Qt Settings
   QT_VERSION: '6.10.1'
   QT_ARCH: 'win64_msvc2022_64'
-  
-  # Project Specifics
   APP_EXECUTABLE: 'counter_app.exe'
   PACKAGE_DOMAIN: 'com.pocqtquick'
-  # Note: Adjust this build path if your CMakeLists.txt structure changes
+  # Note: PowerShell uses backslashes for paths inside the script if you prefer, 
+  # but forward slashes usually work in cmake too.
   BUILD_EXE_PATH: 'build/source/Release/counter_app.exe' 
   QML_SOURCE_DIR: 'source/ui'
 
@@ -18,89 +16,78 @@ jobs:
   build:
     runs-on: windows-2022
 
-    # Using Bash on Windows makes path handling much safer
+    # SWITCH TO POWERSHELL GLOBALLY FOR THIS JOB
     defaults:
       run:
-        shell: bash
+        shell: pwsh
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Setup MSVC Environment
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
-      # 2. Install Qt + Installer Framework (IFW)
-      # 'tools_ifw' automatically installs the latest IFW (approx 4.10.x) and adds it to PATH
       - name: Install Qt and IFW
         uses: jurplel/install-qt-action@v3
         with:
           version: ${{ env.QT_VERSION }}
           arch: ${{ env.QT_ARCH }}
           aqtversion: '>=3.1.6'
-          modules: 'qt5compat'       # Kept from your original snippet
-          tools: 'tools_ifw'         # This replaces the manual download script
+          modules: 'qt5compat'
+          tools: 'tools_ifw'
 
-      # 3. Configure and Build
-      - name: Build Application
+      - name: Configure and Build Application
         run: |
           mkdir build
           cd build
+          # PowerShell handles CMake fine
           cmake .. -G "Visual Studio 17 2022" -A x64
           cmake --build . --config Release
 
-      # 4. Run Unit Tests
       - name: Run Unit Tests
         run: |
           cd build
           ctest -C Release --output-on-failure
 
-      # 5. Stage Files for Installer
-      - name: Copy Files for Packaging
+      - name: Stage Files for Installer
         run: |
-          # Define target directory
-          TARGET_DIR="installer/packages/${{ env.PACKAGE_DOMAIN }}/data"
+          # PowerShell syntax for variables is different ($env:VAR)
+          $targetDir = "installer\packages\$env:PACKAGE_DOMAIN\data"
           
-          # Create directory structure
-          mkdir -p "$TARGET_DIR"
+          # 'New-Item -Force' is the PowerShell equivalent of 'mkdir -p'
+          New-Item -ItemType Directory -Force -Path $targetDir
           
-          # Copy executable
-          cp "${{ env.BUILD_EXE_PATH }}" "$TARGET_DIR/"
+          # Copy the exe
+          Copy-Item -Path "$env:BUILD_EXE_PATH" -Destination $targetDir
 
-      # 6. Run Windeployqt
       - name: Run Windeployqt
         run: |
-          TARGET_EXE="installer/packages/${{ env.PACKAGE_DOMAIN }}/data/${{ env.APP_EXECUTABLE }}"
+          $targetExe = "installer\packages\$env:PACKAGE_DOMAIN\data\$env:APP_EXECUTABLE"
           
-          # Added --compiler-runtime to ensure VCRUNTIME140.dll is included
-          windeployqt --release --compiler-runtime --no-translations --no-opengl-sw --qmldir ${{ env.QML_SOURCE_DIR }} "$TARGET_EXE"
+          # Note: We use correct Windows backslashes here to be safe
+          windeployqt --release --compiler-runtime --no-translations --no-opengl-sw --qmldir $env:QML_SOURCE_DIR $targetExe
 
-      # 7. Create Installer
+      # ROBUST POWERSHELL VERSION OF "CREATE INSTALLER"
       - name: Create Installer
         run: |
-          # 1. Locate binarycreator.exe
-          # We search inside the 'Qt/Tools' folder at the workspace root
-          # The 'ls' command with wildcards finds the version folder automatically (e.g., 4.10 or 4.10.0)
-          BC_PATH=$(ls ../Qt/Tools/QtInstallerFramework/*/bin/binarycreator.exe | head -n 1)
+          # 1. Search for binarycreator.exe recursively in the Qt/Tools folder
+          #    This finds it regardless of version (4.10, 4.11, etc.)
+          $binCreator = Get-ChildItem -Path "..\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe" | Select-Object -First 1 -ExpandProperty FullName
 
-          if [ -z "$BC_PATH" ]; then
-            echo "Error: binarycreator.exe not found!"
-            # Debug: List what IS inside Tools to help troubleshoot
-            ls -R ../Qt/Tools
+          if (-not $binCreator) {
+            Write-Error "binarycreator.exe not found!"
             exit 1
-          fi
+          }
 
-          echo "Found binarycreator at: $BC_PATH"
+          Write-Host "Using binarycreator: $binCreator"
 
-          # 2. Enter the installer directory
           cd installer
+          
+          # 2. Execute using the '&' operator (required in PS for variables containing paths)
+          & $binCreator --offline-installer "pocqtquick.exe" -c config\config.xml -p packages\
 
-          # 3. Run the tool using the explicit path
-          "$BC_PATH" --offline-installer "pocqtquick.exe" -c config/config.xml -p packages/
-
-      # 8. Upload Installer Artifact
-      - name: Upload Installer
+      - name: Upload Installer Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Windows-Installer
