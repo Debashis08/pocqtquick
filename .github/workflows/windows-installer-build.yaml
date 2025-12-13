@@ -38,7 +38,7 @@ jobs:
         with:
           version: ${{ env.QT_VERSION }}
           arch: ${{ env.QT_ARCH }}
-          aqtinstall-version: '>=3.1.0'
+          aqtversion: '3.1.6'
           modules: 'qt5compat'       # Kept from your original snippet
           tools: 'tools_ifw'         # This replaces the manual download script
 
@@ -79,11 +79,25 @@ jobs:
       # 7. Create Installer
       - name: Create Installer
         run: |
-          # binarycreator is now automatically in the PATH
+          # 1. Locate binarycreator.exe
+          # We search inside the 'Qt/Tools' folder at the workspace root
+          # The 'ls' command with wildcards finds the version folder automatically (e.g., 4.10 or 4.10.0)
+          BC_PATH=$(ls ../Qt/Tools/QtInstallerFramework/*/bin/binarycreator.exe | head -n 1)
+
+          if [ -z "$BC_PATH" ]; then
+            echo "Error: binarycreator.exe not found!"
+            # Debug: List what IS inside Tools to help troubleshoot
+            ls -R ../Qt/Tools
+            exit 1
+          fi
+
+          echo "Found binarycreator at: $BC_PATH"
+
+          # 2. Enter the installer directory
           cd installer
-          
-          echo "Generating installer..."
-          binarycreator --offline-installer "pocqtquick.exe" -c config/config.xml -p packages/
+
+          # 3. Run the tool using the explicit path
+          "$BC_PATH" --offline-installer "pocqtquick.exe" -c config/config.xml -p packages/
 
       # 8. Upload Installer Artifact
       - name: Upload Installer
