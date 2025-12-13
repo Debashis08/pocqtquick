@@ -1,101 +1,89 @@
-name: Build and Package Windows Installer
-
+name: Windows Installer Build (MSVC)
 on: [push, pull_request]
 
-env:
-  # Configuration Variables (Change these to match your project)
-  QT_VERSION: '6.10.1'
-  QT_ARCH: 'win64_msvc2019_64'
-  QT_IFW_VERSION: '4.10.0'
-  BUILD_TYPE: 'Release'
-  
-  # Project Specifics
-  APP_EXECUTABLE: 'counter_app.exe'
-  PACKAGE_DOMAIN: 'com.pocqtquick'
-  QML_SOURCE_DIR: 'source/ui' # Where your .qml files live in the source
-  
 jobs:
-  build-installer:
+  build:
     runs-on: windows-2022
-    
-    # Defaults to Bash to handle paths consistently
+
     defaults:
       run:
-        shell: bash
+        shell: cmd
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Setup MSVC Environment (Critical for CMake finding the right compiler)
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-
-      # 2. Install Qt (Using the Action is cleaner than manual download)
+      # 1. Install Qt 6.10.0 + Installer Framework (Required for binarycreator)
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: ${{ env.QT_VERSION }}
-          arch: ${{ env.QT_ARCH }}
-          aqtinstall-version: '>=3.1.0'
+          version: '6.10.0'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+          modules: 'qt5compat'
+          tools: 'tools_ifw'
 
-      # 3. Setup Qt Installer Framework (Using the Action puts binarycreator in PATH automatically)
-      - name: Setup Qt Installer Framework
-        uses: jmarrec/setup-qtifw@v1
-        with:
-          qtifw-version: ${{ env.QT_IFW_VERSION }}
+      # 2. Setup MSVC Environment
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
 
-      # 4. Configure and Build
+      # 3. Configure and Build
       - name: Build Application
         run: |
           mkdir build
           cd build
-          cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-          cmake --build . --config ${{ env.BUILD_TYPE }}
+          cmake .. -G "Visual Studio 17 2022" -A x64
+          cmake --build . --config Release
 
-      # 5. Run Unit Tests (From your second snippet - highly recommended)
+      # 4. Run Unit Tests
       - name: Run Unit Tests
         run: |
           cd build
-          # CTest is standard for CMake projects
-          ctest -C ${{ env.BUILD_TYPE }} --output-on-failure
+          ctest -C Release --output-on-failure
 
-      # 6. Stage Files for Installer
-      - name: Prepare Packaging Directory
+      # 5. Prepare Packaging
+      - name: Copy Files for Packaging
         run: |
-          # Define the target directory variable for cleaner script
-          TARGET_DIR="installer/packages/${{ env.PACKAGE_DOMAIN }}/data"
-          
-          # Create directory structure
-          mkdir -p "$TARGET_DIR"
-          
-          # Copy the compiled EXE to the package data folder
-          # Note: Adjust the source path if your CMakeLists puts the exe elsewhere
-          cp build/${{ env.BUILD_TYPE }}/${{ env.APP_EXECUTABLE }} "$TARGET_DIR/"
+          cmake -E make_directory "installer/packages/com.pocqtquick/data"
+          cmake -E copy "build/source/Release/counter_app.exe" "installer/packages/com.pocqtquick/data/"
 
-      # 7. Run Windeployqt
-      - name: Deploy Qt Dependencies
+      # 6. Run windeployqt
+      - name: Run Windeployqt
         run: |
-          TARGET_EXE="installer/packages/${{ env.PACKAGE_DOMAIN }}/data/${{ env.APP_EXECUTABLE }}"
-          
-          # Combined flags from both inputs:
-          # --compiler-runtime: includes vcruntime140.dll (Crucial!)
-          # --no-translations: saves space if you don't need Qt's own translations
-          # --no-opengl-sw: saves space if you don't need software rendering fallback
-          
-          windeployqt --release --compiler-runtime --no-translations --no-opengl-sw --qmldir ${{ env.QML_SOURCE_DIR }} "$TARGET_EXE"
+          windeployqt --release --no-translations --no-opengl-sw --qmldir source\ui installer\packages\com.pocqtquick\data\counter_app.exe
 
-      # 8. Create Installer
-      - name: Generate Installer Binary
+      - name: Install Qt Installer Framework Manually
+        shell: pwsh
         run: |
-          cd installer
-          
-          # binarycreator is already in PATH thanks to the setup-qtifw action
-          binarycreator --offline-installer "Windows_Installer.exe" -c config/config.xml -p packages/
+          Write-Host "Downloading Qt Installer Framework..."
 
-      # 9. Upload Artifact
+          $installerUrl = "https://download.qt.io/official_releases/qt-installer-framework/4.6.1/QtInstallerFramework-windows-x64-4.6.1.exe"
+          $installerPath = "$env:USERPROFILE\ifw-installer.exe"
+
+          Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath
+
+          Write-Host "Installing Qt IFW silently..."
+          & $installerPath --silent --root "$env:USERPROFILE\QtIFW"
+
+      # 7. Create Installer (find IFW path using install-qt-action variables)
+      - name: Create Installer
+        shell: pwsh
+        run: |
+          $binaryCreator = "$env:USERPROFILE\QtIFW\bin\binarycreator.exe"
+
+          if (-not (Test-Path $binaryCreator)) {
+            Write-Error "binarycreator.exe not found at: $binaryCreator"
+            exit 1
+          }
+
+          Write-Host "Using binarycreator: $binaryCreator"
+
+          & $binaryCreator -c installer\config\config.xml -p installer\packages pocqtquick.exe
+
+      # 8. Upload Installer Artifact
       - name: Upload Installer
         uses: actions/upload-artifact@v4
         with:
           name: Windows-Installer
-          path: installer/Windows_Installer.exe
+          path: pocqtquick.exe
