@@ -1,0 +1,48 @@
+name: pocqtquick-validate
+
+on: [pull_request]
+
+env:
+  QT_VERSION: '6.10.1'
+  QT_ARCH: 'win64_msvc2022_64'
+  APP_EXECUTABLE: 'counter_app.exe'
+  PACKAGE_DOMAIN: 'com.pocqtquick'
+  # Note: PowerShell uses backslashes for paths inside the script if you prefer, 
+  # but forward slashes usually work in cmake too.
+  BUILD_EXE_PATH: 'build/source/Release/counter_app.exe' 
+  QML_SOURCE_DIR: 'source/ui'
+
+jobs:
+  lint-build-test:
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: ${{ env.QT_ARCH }}
+          aqtversion: '>=3.1.6'
+          modules: 'qt5compat'
+
+      - name: Configure and Build Application
+        run: |
+          mkdir build
+          cd build
+          # PowerShell handles CMake fine
+          cmake .. -G "Visual Studio 17 2022" -A x64
+          cmake --build . --config Release
+
+      - name: Run Unit Tests
+        run: |
+          cd build
+          ctest -C Release --output-on-failure
