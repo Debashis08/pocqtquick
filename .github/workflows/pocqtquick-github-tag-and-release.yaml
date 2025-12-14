@@ -142,7 +142,7 @@ jobs:
       # Step 8: Create GitHub Release
       - name: Create GitHub Release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.POCQTQUICK_PAT_RELEASE_TOKEN }}
           NEW_TAG: ${{ steps.new_tag.outputs.new_tag }}
           SUMMARY: ${{ steps.extract_summary.outputs.summary }}
           PR_TITLE: ${{ github.event.pull_request.title }}
