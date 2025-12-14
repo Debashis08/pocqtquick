@@ -1,6 +1,12 @@
 name: pocqtquick-validate
 
-on: [pull_request]
+# Triggers when a PR is opened or updated, targeting 'release' OR 'main'
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - release
+      - main
 
 env:
   QT_VERSION: '6.10.1'
@@ -13,7 +19,27 @@ env:
   QML_SOURCE_DIR: 'source/ui'
 
 jobs:
+
+  enforce-branch-strategy:
+    runs-on: windows-2022
+    steps:
+      - name: Block invalid PR path
+        # This step ONLY runs if the path is INVALID
+        # Wrap the entire logical operation in ${{...}}
+        if: ${{ !((startsWith(github.event.pull_request.head.ref, 'feature-') && github.event.pull_request.base.ref == 'release') || (github.event.pull_request.head.ref == 'release' && github.event.pull_request.base.ref == 'main')) }}
+        run: |
+          echo "::error:: This PR path (${{ github.event.pull_request.head.ref }} -> ${{ github.event.pull_request.base.ref }}) is not allowed."
+          echo "::error:: Allowed paths are: 'feature-*' -> 'release' OR 'release' -> 'main'."
+          exit 1
+      
+      - name: Approve valid PR path
+        # This step ONLY runs if the path is VALID (for logging)
+        if: (startsWith(github.event.pull_request.head.ref, 'feature-') && github.event.pull_request.base.ref == 'release') || (github.event.pull_request.head.ref == 'release' && github.event.pull_request.base.ref == 'main')
+        run: |
+          echo "Valid PR path. Proceeding to build and test..."
+
   lint-build-test:
+    needs: enforce-branch-strategy
     runs-on: windows-2022
     defaults:
       run:
