@@ -5,6 +5,10 @@ on:
   release:
     types: [published]
 
+
+permissions:
+  contents: write
+
 env:
   QT_VERSION: '6.10.1'
   QT_ARCH: 'win64_msvc2022_64'
@@ -16,7 +20,7 @@ env:
   RELEASE_VERSION: ${{ github.event.release.tag_name }}
 
 jobs:
-  build:
+  build-create-installer:
     runs-on: windows-2022
     defaults:
       run:
