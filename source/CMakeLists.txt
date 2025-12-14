@@ -2,7 +2,7 @@
 # We list all the necessary source and resource files to build it.
 # CMake's AUTORCC will handle the qml.qrc file.
 # CMake's AUTOMOC will handle the counter.h header.
-add_executable(counter_app
+add_executable(counter_app WIN32
     main.cpp
     qml.qrc
     backend/counter.cpp

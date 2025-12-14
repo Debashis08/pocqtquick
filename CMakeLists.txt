@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 # Define the project name, version, and language.
-project(QtCounterApp VERSION 1.0 LANGUAGES CXX)
+project(pocqtquick VERSION 1.0 LANGUAGES CXX)
 
 # Set the C++ standard to C++17.
 set(CMAKE_CXX_STANDARD 17)
