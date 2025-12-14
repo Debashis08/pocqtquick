@@ -5,6 +5,10 @@ on:
   release:
     types: [published]
 
+
+permissions:
+  contents: write
+
 env:
   QT_VERSION: '6.10.1'
   QT_ARCH: 'win64_msvc2022_64'
