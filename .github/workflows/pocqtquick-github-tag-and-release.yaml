@@ -94,7 +94,6 @@ jobs:
           echo "New tag will be: $NEW_TAG"
 
       - name: Create and push new tag
-        # No PAT needed here since we are in the same workflow run!
         run: |
           NEW_TAG=${{ steps.new_tag.outputs.new_tag }}
           MERGE_COMMIT_SHA=${{ github.event.pull_request.merge_commit_sha }}
@@ -123,6 +122,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
+        id: create_release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NEW_TAG: ${{ steps.new_tag.outputs.new_tag }}
