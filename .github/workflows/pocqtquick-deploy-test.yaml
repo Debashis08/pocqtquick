@@ -1,5 +1,6 @@
 name: QA Build (Release Branch)
 
+# TRIGGER: Only runs when code is merged to 'release' branch
 on:
   pull_request:
     types: [closed]
@@ -11,23 +12,33 @@ env:
   QT_ARCH: 'win64_msvc2022_64'
   APP_EXECUTABLE: 'counter_app.exe'
   PACKAGE_DOMAIN: 'com.pocqtquick'
+  BUILD_EXE_PATH: 'build/source/Release/counter_app.exe'
   QML_SOURCE_DIR: 'source/ui'
 
 jobs:
-  # 1. BUILD
-  build:
+  build-qa-artifacts:
     runs-on: windows-2022
     defaults:
       run:
         shell: pwsh
-    outputs:
-      timestamp: ${{ steps.time.outputs.ts }}
+
     steps:
-      - name: Generate Timestamp (Build ID)
+      # 1. SETUP TIMESTAMP & VARIABLES
+      - name: Generate Timestamp
         id: time
         run: |
+          # Create a clean timestamp: YYYYMMDDHHmm (e.g., 202312161430)
           $ts = Get-Date -Format "yyyyMMddHHmm"
-          echo "ts=$ts" >> $env:GITHUB_OUTPUT
+          
+          # Define names with "QA" prefix and timestamp
+          $zipName = "pocqtquick-QA-$ts-Portable.zip"
+          $installerName = "pocqtquick-QA-$ts-Installer.exe"
+          
+          # Save to ENV for later steps
+          echo "TIMESTAMP=$ts" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "ZIP_NAME=$zipName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "INSTALLER_NAME=$installerName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          
           Write-Host "Build Timestamp: $ts"
 
       - name: Checkout Code
@@ -36,13 +47,14 @@ jobs:
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Install Qt
+      - name: Install Qt and IFW
         uses: jurplel/install-qt-action@v3
         with:
           version: ${{ env.QT_VERSION }}
           arch: ${{ env.QT_ARCH }}
           aqtversion: '>=3.1.6'
           modules: 'qt5compat'
+          tools: 'tools_ifw'
 
       - name: Configure and Build Application
         run: |
@@ -51,115 +63,54 @@ jobs:
           cmake .. -G "Visual Studio 17 2022" -A x64
           cmake --build . --config Release
 
-      - name: Upload Build Artifacts (Raw Binary)
-        uses: actions/upload-artifact@v4
-        with:
-          name: compiled-binaries
-          path: build/source/Release/counter_app.exe
-          retention-days: 1
-
-  # 2. TEST
-  test:
-    needs: build
-    runs-on: windows-2022
-    defaults:
-      run:
-        shell: pwsh
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: ${{ env.QT_VERSION }}
-          arch: ${{ env.QT_ARCH }}
-
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: compiled-binaries
-          path: build/source/Release
-
       - name: Run Unit Tests
         run: |
           cd build
-          cmake .. -G "Visual Studio 17 2022" -A x64
           ctest -C Release --output-on-failure
 
-  # 3. PACKAGE (Updated for Separate Artifacts)
-  package:
-    needs: [build, test]
-    runs-on: windows-2022
-    defaults:
-      run:
-        shell: pwsh
-    env:
-      TS: ${{ needs.build.outputs.timestamp }}
-      
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Install Qt and IFW
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: ${{ env.QT_VERSION }}
-          arch: ${{ env.QT_ARCH }}
-          tools: 'tools_ifw'
-
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: compiled-binaries
-          path: staging
-
-      - name: Run Windeployqt
-        run: |
-          $targetExe = "staging\$env:APP_EXECUTABLE"
-          windeployqt --release --compiler-runtime --no-translations --no-opengl-sw --qmldir $env:QML_SOURCE_DIR $targetExe
-
-      - name: Create Portable Zip
-        run: |
-          $zipName = "pocqtquick-QA-$env:TS-Portable.zip"
-          Compress-Archive -Path "staging\*" -DestinationPath $zipName
-          echo "ZIP_NAME=$zipName" >> $env:GITHUB_ENV
-
-      - name: Create Installer
+      # 2. PREPARE THE APP FOLDER
+      - name: Stage Files for Installer
         run: |
           $targetDir = "installer\packages\$env:PACKAGE_DOMAIN\data"
           New-Item -ItemType Directory -Force -Path $targetDir
-          Copy-Item -Path "staging\*" -Destination $targetDir -Recurse
+          Copy-Item -Path "$env:BUILD_EXE_PATH" -Destination $targetDir
 
-          $installerName = "pocqtquick-QA-$env:TS-Installer.exe"
-          $binCreator = Get-ChildItem -Path "..\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe" | Select-Object -First 1 -ExpandProperty FullName
+      - name: Run Windeployqt
+        run: |
+          $targetExe = "installer\packages\$env:PACKAGE_DOMAIN\data\$env:APP_EXECUTABLE"
+          windeployqt --release --compiler-runtime --no-translations --no-opengl-sw --qmldir $env:QML_SOURCE_DIR $targetExe
+
+      # 3. CREATE THE PORTABLE ZIP (For quick QA)
+      - name: Create Portable Zip
+        run: |
+          $sourceDir = "installer\packages\$env:PACKAGE_DOMAIN\data"
+          $destZip = "installer\$env:ZIP_NAME"
           
-          if (-not $binCreator) { Write-Error "binarycreator.exe not found!"; exit 1 }
+          Write-Host "Zipping portable app to: $destZip"
+          Compress-Archive -Path "$sourceDir\*" -DestinationPath $destZip
+
+      # 4. CREATE THE INSTALLER
+      - name: Create Installer
+        run: |
+          $binCreator = Get-ChildItem -Path "..\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe" | Select-Object -First 1 -ExpandProperty FullName
+
+          if (-not $binCreator) {
+            Write-Error "binarycreator.exe not found!"
+            exit 1
+          }
+          
+          Write-Host "Building Installer: $env:INSTALLER_NAME"
           
           cd installer
-          & $binCreator -c config\config.xml -p packages\ $installerName
-          
-          Move-Item $installerName ..\
-          echo "INSTALLER_NAME=$installerName" >> $env:GITHUB_ENV
+          & $binCreator -c config\config.xml -p packages\ $env:INSTALLER_NAME
 
-      # --- CHANGED SECTION START ---
-      
-      # Upload 1: The Portable Zip
-      - name: Upload Artifact - Portable Zip
+      # 5. UPLOAD ARTIFACTS (Downloadable from Actions Tab)
+      - name: Upload QA Artifacts
         uses: actions/upload-artifact@v4
         with:
-          # This sets the name of the artifact in the GitHub UI
-          name: Portable-App-${{ env.TS }}
-          path: ${{ env.ZIP_NAME }}
-          retention-days: 5
-
-      # Upload 2: The Installer Executable
-      - name: Upload Artifact - Installer
-        uses: actions/upload-artifact@v4
-        with:
-          # This sets a DIFFERENT name in the GitHub UI
-          name: Windows-Installer-${{ env.TS }}
-          path: ${{ env.INSTALLER_NAME }}
-          retention-days: 5
-          
-      # --- CHANGED SECTION END ---
+          # This name appears in the UI
+          name: QA-Build-${{ env.TIMESTAMP }}
+          path: |
+            installer/${{ env.INSTALLER_NAME }}
+            installer/${{ env.ZIP_NAME }}
+          retention-days: 5 # Deletes files after 5 days to save storage
