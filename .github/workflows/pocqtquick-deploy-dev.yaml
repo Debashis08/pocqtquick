@@ -1,0 +1,206 @@
+name: pocqtquick-deploy-dev
+
+# TRIGGER: Manual run ONLY (on any branch)
+on:
+  workflow_dispatch:
+
+env:
+  QT_VERSION: '6.10.1'
+  QT_ARCH: 'win64_msvc2022_64'
+  APP_EXECUTABLE: 'counter_app.exe'
+  PACKAGE_DOMAIN: 'com.pocqtquick'
+  BUILD_EXE_PATH: 'build/Release/counter_app.exe'
+  QML_SOURCE_DIR: 'source/ui'
+
+jobs:
+  # JOB 1: VALIDATION
+  # Calls your other workflow to ensure linting/tests pass first
+  call-validation:
+    uses: ./.github/workflows/pocqtquick-validate.yaml
+
+  # JOB 2: TIMESTAMP
+  generate-timestamp:
+    needs: call-validation
+    runs-on: ubuntu-latest
+    outputs:
+      ts: ${{ steps.time.outputs.ts }}
+    steps:
+      - name: Generate Timestamp
+        id: time
+        run: |
+          TS=$(date +'%Y%m%d%H%M')
+          echo "ts=$TS" >> $GITHUB_OUTPUT
+          echo "Generated Timestamp: $TS"
+
+  # JOB 3: BUILD APP (Windows)
+  build-app:
+    needs: call-validation
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+      
+      - name: Install Qt (Compiler)
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: ${{ env.QT_ARCH }}
+          aqtversion: '>=3.1.6'
+          modules: 'qt5compat'
+
+      - name: Configure and Build
+        run: |
+          mkdir build; cd build
+          cmake .. -G "Visual Studio 17 2022" -A x64
+          cmake --build . --config Release
+
+      - name: Upload Raw EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-exe
+          path: ${{ env.BUILD_EXE_PATH }}
+          retention-days: 1
+
+  # JOB 4: WINDEPLOYQT
+  run-windeployqt:
+    needs: build-app
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Qt (Deploy Tool)
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: ${{ env.QT_ARCH }}
+          aqtversion: '>=3.1.6'
+          modules: 'qt5compat'
+
+      - name: Download Raw EXE
+        uses: actions/download-artifact@v4
+        with:
+          name: raw-exe
+          path: download_temp
+
+      - name: Run Windeployqt
+        run: |
+          $targetDir = "installer\packages\$env:PACKAGE_DOMAIN\data"
+          New-Item -ItemType Directory -Force -Path $targetDir
+
+          Move-Item -Path "download_temp\$env:APP_EXECUTABLE" -Destination $targetDir
+
+          $stagedExe = "$targetDir\$env:APP_EXECUTABLE"
+          windeployqt --release --compiler-runtime --no-translations --no-opengl-sw --qmldir $env:QML_SOURCE_DIR $stagedExe
+          
+          Remove-Item "$targetDir\*.obj", "$targetDir\*.cpp" -ErrorAction SilentlyContinue
+
+      - name: Upload Staged Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: staged-package
+          path: installer/packages/${{ env.PACKAGE_DOMAIN }}/data
+          retention-days: 1
+
+  # JOB 5: CREATE ZIP
+  create-portable-zip:
+    needs: [run-windeployqt, generate-timestamp]
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Download Staged Package
+        uses: actions/download-artifact@v4
+        with:
+          name: staged-package
+          path: staged-data
+
+      - name: Create Zip
+        run: |
+          $ts = "${{ needs.generate-timestamp.outputs.ts }}"
+          $zipName = "pocqtquick-Dev-$ts-Portable.zip"
+          
+          Write-Host "Zipping..."
+          Compress-Archive -Path "staged-data\*" -DestinationPath $zipName
+          
+          echo "ZIP_FILENAME=$zipName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Upload Zip Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable-zip-artifact
+          path: ${{ env.ZIP_FILENAME }}
+          retention-days: 1
+
+  # JOB 6: CREATE INSTALLER EXE
+  create-installer-exe:
+    needs: [run-windeployqt, generate-timestamp]
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Qt (IFW)
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: ${{ env.QT_ARCH }}
+          aqtversion: '>=3.1.6'
+          tools: 'tools_ifw'
+
+      - name: Download Staged Package
+        uses: actions/download-artifact@v4
+        with:
+          name: staged-package
+          path: installer/packages/${{ env.PACKAGE_DOMAIN }}/data
+
+      - name: Build Installer
+        run: |
+          $ts = "${{ needs.generate-timestamp.outputs.ts }}"
+          $installerName = "pocqtquick-Dev-$ts-Installer.exe"
+          
+          $binCreator = Get-ChildItem -Path "..\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe" | Select-Object -First 1 -ExpandProperty FullName
+          
+          cd installer
+          & $binCreator -c config\config.xml -p packages\ $installerName
+          
+          echo "INSTALLER_FILENAME=$installerName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Upload Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-exe-artifact
+          path: installer/${{ env.INSTALLER_FILENAME }}
+          retention-days: 1
+
+  # JOB 7: UPLOAD RELEASE ASSETS
+  upload-release-assets:
+    needs: [create-portable-zip, create-installer-exe, generate-timestamp]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Zip
+        uses: actions/download-artifact@v4
+        with:
+          name: portable-zip-artifact
+          path: final_assets
+
+      - name: Download Installer
+        uses: actions/download-artifact@v4
+        with:
+          name: installer-exe-artifact
+          path: final_assets
+
+      - name: Publish Final Artifact Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dev-Release-${{ needs.generate-timestamp.outputs.ts }}
+          path: final_assets/*
+          retention-days: 5
