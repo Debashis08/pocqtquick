@@ -1,6 +1,7 @@
 name: pocqtquick-validate
 
 on:
+  workflow_call:
   pull_request:
     types: [opened, synchronize]
     branches:
