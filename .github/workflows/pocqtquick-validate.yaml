@@ -1,13 +1,11 @@
 name: pocqtquick-validate
 
 on:
-  # Trigger 1: Automatic PR checks
   pull_request:
     types: [opened, synchronize]
     branches:
       - release
       - main
-  # Trigger 2: Manual run on feature branches
   workflow_dispatch:
 
 env:
@@ -15,64 +13,37 @@ env:
   QT_ARCH: 'win64_msvc2022_64'
 
 jobs:
-  # JOB 1: Policy Check (Gatekeeper)
-  enforce-branch-strategy:
-    runs-on: windows-2022
-    defaults:
-      run:
-        shell: bash # Using bash for easier regex logic
+  # JOB 1: VALIDATE BRANCH POLICY (Formerly enforce-branch-strategy)
+  validate-branch-policy:
+    runs-on: ubuntu-latest
     steps:
-      - name: Validate Execution Context
+      # --- SCENARIO A: Pull Request Checks ---
+      - name: Block invalid PR path
+        if: |
+          github.event_name == 'pull_request' &&
+          !((startsWith(github.event.pull_request.head.ref, 'feature-') && github.event.pull_request.base.ref == 'release') || 
+            (github.event.pull_request.head.ref == 'release' && github.event.pull_request.base.ref == 'main'))
         run: |
-          EVENT_NAME="${{ github.event_name }}"
-          echo "Event type: $EVENT_NAME"
+          echo "::error::Invalid PR Path. Allowed: 'feature-* -> release' or 'release -> main'."
+          exit 1
 
-          # ---------------------------------------------------
-          # SCENARIO A: Pull Request
-          # ---------------------------------------------------
-          if [[ "$EVENT_NAME" == "pull_request" ]]; then
-            HEAD_REF="${{ github.event.pull_request.head.ref }}"
-            BASE_REF="${{ github.event.pull_request.base.ref }}"
-            
-            echo "Checking PR: $HEAD_REF -> $BASE_REF"
-            
-            # Logic: (feature-* -> release) OR (release -> main)
-            if [[ "$HEAD_REF" == feature-* && "$BASE_REF" == "release" ]]; then
-              echo "Valid Path: Feature to Release."
-              exit 0
-            elif [[ "$HEAD_REF" == "release" && "$BASE_REF" == "main" ]]; then
-              echo "Valid Path: Release to Main."
-              exit 0
-            else
-              echo "::error::Invalid PR Path. Allowed: 'feature-* -> release' or 'release -> main'."
-              exit 1
-            fi
+      - name: Approve valid PR path
+        if: |
+          github.event_name == 'pull_request' &&
+          ((startsWith(github.event.pull_request.head.ref, 'feature-') && github.event.pull_request.base.ref == 'release') || 
+           (github.event.pull_request.head.ref == 'release' && github.event.pull_request.base.ref == 'main'))
+        run: echo "PR Path Validated."
 
-          # ---------------------------------------------------
-          # SCENARIO B: Manual Run (workflow_dispatch)
-          # ---------------------------------------------------
-          elif [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            REF_NAME="${{ github.ref_name }}" # The branch selected in UI
-            echo "Checking Manual Run on branch: $REF_NAME"
+     # --- SCENARIO B: Manual Run Checks (Updated) ---
+      # Logic: If it is a manual trigger, always allow it.
+      - name: Approve Manual Run
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "Manual validation run initiated on branch '${{ github.ref_name }}'"
 
-            # Logic: Must be a feature-* branch
-            if [[ "$REF_NAME" == feature-* ]]; then
-              echo "Valid Branch: Manual run allowed on feature branch."
-              exit 0
-            else
-              echo "::error::Manual runs are only allowed on 'feature-*' branches."
-              exit 1
-            fi
-
-          else
-            echo "::error::Unknown trigger event."
-            exit 1
-          fi
-
-  # JOB 2: Lint (New Requirement)
-  lint:
-    needs: enforce-branch-strategy
-    runs-on: windows-2022 # Or ubuntu-latest if your linter supports it
+  # JOB 2: LINT CODE
+  lint-code:
+    needs: validate-branch-policy
+    runs-on: windows-2022 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -80,14 +51,13 @@ jobs:
       - name: Run Linter
         shell: pwsh
         run: |
-          # Placeholder: Add your specific linter command here (e.g., clang-format, cppcheck)
           Write-Host "Running Lint Checks..."
-          # Example: cmake --build build --target check-format
+          # cmake --build build --target check-format
           Write-Host "Linting passed."
 
-  # JOB 3: Build
-  build:
-    needs: enforce-branch-strategy
+  # JOB 3: BUILD APP
+  build-app:
+    needs: lint-code
     runs-on: windows-2022
     defaults:
       run:
@@ -114,7 +84,6 @@ jobs:
           cmake .. -G "Visual Studio 17 2022" -A x64
           cmake --build . --config Release
 
-      # CRITICAL STEP: Upload the build directory so the Test job can use it
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -122,9 +91,9 @@ jobs:
           path: build/
           retention-days: 1
 
-  # JOB 4: Test
-  test:
-    needs: build
+  # JOB 4: UNIT TESTS
+  run-unit-tests:
+    needs: build-app
     runs-on: windows-2022
     defaults:
       run:
@@ -144,7 +113,6 @@ jobs:
           aqtversion: '>=3.1.6'
           modules: 'qt5compat'
 
-      # CRITICAL STEP: Download the binaries built in the previous job
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
