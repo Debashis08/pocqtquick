@@ -142,6 +142,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           # This name appears in the GitHub UI
-          name: Installer-Exe-${{ needs.generate-timestamp.outputs.ts }}
+          name: pocqtquick-dev-installer-${{ needs.generate-timestamp.outputs.ts }}
           path: installer/${{ env.INSTALLER_FILENAME }}
           retention-days: 5
