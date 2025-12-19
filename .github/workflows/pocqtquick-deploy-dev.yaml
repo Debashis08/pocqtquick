@@ -14,8 +14,6 @@ env:
 
 jobs:
   # JOB 1: VALIDATION & BUILD
-  # This runs your reusable workflow.
-  # CRITICAL: That workflow MUST upload an artifact named 'compiled-app'
   call-validation:
     uses: ./.github/workflows/pocqtquick-validate.yaml
 
@@ -33,7 +31,7 @@ jobs:
           echo "ts=$TS" >> $GITHUB_OUTPUT
           echo "Generated Timestamp: $TS"
 
-  # JOB 3: WINDEPLOYQT (Deploy directly from Validation Artifacts)
+  # JOB 3: WINDEPLOYQT
   run-windeployqt:
     needs: [call-validation, generate-timestamp]
     runs-on: windows-2022
@@ -51,11 +49,10 @@ jobs:
           aqtversion: '>=3.1.6'
           modules: 'qt5compat'
 
-      # FIX: Download the artifact created by 'call-validation'
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
         with:
-          name: compiled-app   # Matches the name in pocqtquick-validate.yaml
+          name: compiled-app
           path: download_temp
 
       - name: Run Windeployqt
@@ -63,23 +60,15 @@ jobs:
           $targetDir = "installer\packages\$env:PACKAGE_DOMAIN\data"
           New-Item -ItemType Directory -Force -Path $targetDir
 
-          # FIX: Find the EXE dynamically because 'compiled-app' contains the full 'build/' folder
           $exePath = Get-ChildItem -Path "download_temp" -Filter $env:APP_EXECUTABLE -Recurse | Select-Object -First 1 -ExpandProperty FullName
           
-          if (-not $exePath) {
-            Write-Error "Could not find $env:APP_EXECUTABLE in the downloaded artifacts."
-            exit 1
-          }
-          Write-Host "Found Executable at: $exePath"
+          if (-not $exePath) { Write-Error "Exe not found"; exit 1 }
 
-          # Move EXE to Staging
           Move-Item -Path $exePath -Destination $targetDir
 
-          # Run Windeployqt
           $stagedExe = "$targetDir\$env:APP_EXECUTABLE"
           windeployqt --release --compiler-runtime --no-translations --no-opengl-sw --qmldir $env:QML_SOURCE_DIR $stagedExe
           
-          # Cleanup junk files
           Remove-Item "$targetDir\*.obj", "$targetDir\*.cpp", "$targetDir\*.h", "$targetDir\*.cmake" -ErrorAction SilentlyContinue
 
       - name: Upload Staged Package
@@ -89,7 +78,7 @@ jobs:
           path: installer/packages/${{ env.PACKAGE_DOMAIN }}/data
           retention-days: 1
 
-  # JOB 4: CREATE ZIP
+  # JOB 4: CREATE ZIP (Uploads DIRECTLY here)
   create-portable-zip:
     needs: [run-windeployqt, generate-timestamp]
     runs-on: windows-2022
@@ -113,14 +102,16 @@ jobs:
           
           echo "ZIP_FILENAME=$zipName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Upload Zip Artifact
+      # FIX: Upload as a distinct artifact immediately
+      - name: Upload Portable Zip
         uses: actions/upload-artifact@v4
         with:
-          name: portable-zip-artifact
+          # This name appears in the GitHub UI
+          name: Portable-Zip-${{ needs.generate-timestamp.outputs.ts }}
           path: ${{ env.ZIP_FILENAME }}
-          retention-days: 1
+          retention-days: 5
 
-  # JOB 5: CREATE INSTALLER EXE
+  # JOB 5: CREATE INSTALLER EXE (Uploads DIRECTLY here)
   create-installer-exe:
     needs: [run-windeployqt, generate-timestamp]
     runs-on: windows-2022
@@ -156,33 +147,11 @@ jobs:
           
           echo "INSTALLER_FILENAME=$installerName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Upload Installer Artifact
+      # FIX: Upload as a distinct artifact immediately
+      - name: Upload Installer Exe
         uses: actions/upload-artifact@v4
         with:
-          name: installer-exe-artifact
+          # This name appears in the GitHub UI
+          name: Installer-Exe-${{ needs.generate-timestamp.outputs.ts }}
           path: installer/${{ env.INSTALLER_FILENAME }}
-          retention-days: 1
-
-  # JOB 6: UPLOAD RELEASE ASSETS
-  upload-release-assets:
-    needs: [create-portable-zip, create-installer-exe, generate-timestamp]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download Zip
-        uses: actions/download-artifact@v4
-        with:
-          name: portable-zip-artifact
-          path: final_assets
-
-      - name: Download Installer
-        uses: actions/download-artifact@v4
-        with:
-          name: installer-exe-artifact
-          path: final_assets
-
-      - name: Publish Final Artifact Bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: Dev-Release-${{ needs.generate-timestamp.outputs.ts }}
-          path: final_assets/*
           retention-days: 5
