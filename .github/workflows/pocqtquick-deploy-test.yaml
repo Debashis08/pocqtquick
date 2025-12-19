@@ -1,0 +1,155 @@
+name: pocqtquick-deploy-test
+
+# TRIGGER: Manual run ONLY on main and release branches
+on:
+  workflow_dispatch:
+
+env:
+  QT_VERSION: '6.10.1'
+  QT_ARCH: 'win64_msvc2022_64'
+  APP_EXECUTABLE: 'counter_app.exe'
+  PACKAGE_DOMAIN: 'com.pocqtquick'
+  # Note: QML dir must exist in the repo checkout
+  QML_SOURCE_DIR: 'source/ui'
+
+jobs:
+  # JOB 1: VALIDATION & BUILD
+  # UPDATE: Added 'if' condition to restrict execution to 'main' and 'release' branches.
+  # If this job skips, all subsequent jobs will also skip.
+  call-validation:
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release')
+    uses: ./.github/workflows/pocqtquick-validate.yaml
+
+  # JOB 2: TIMESTAMP
+  generate-timestamp:
+    needs: call-validation
+    runs-on: ubuntu-latest
+    outputs:
+      ts: ${{ steps.time.outputs.ts }}
+    steps:
+      - name: Generate Timestamp
+        id: time
+        run: |
+          TS=$(date +'%Y%m%d%H%M%S')
+          echo "ts=$TS" >> $GITHUB_OUTPUT
+          echo "Generated Timestamp: $TS"
+
+  # JOB 3: WINDEPLOYQT
+  run-windeployqt:
+    needs: [call-validation, generate-timestamp]
+    runs-on: windows-2022
+    
+    # MANUAL CHECK: This will pause the workflow here if you configure 
+    # "Required Reviewers" for the "test" environment in GitHub Settings.
+    environment: test
+    
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Qt (Deploy Tool)
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: ${{ env.QT_ARCH }}
+          aqtversion: '>=3.1.6'
+          modules: 'qt5compat'
+
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: compiled-app
+          path: download_temp
+
+      - name: Run Windeployqt
+        run: |
+          $targetDir = "installer\packages\$env:PACKAGE_DOMAIN\data"
+          New-Item -ItemType Directory -Force -Path $targetDir
+
+          $exePath = Get-ChildItem -Path "download_temp" -Filter $env:APP_EXECUTABLE -Recurse | Select-Object -First 1 -ExpandProperty FullName
+          
+          if (-not $exePath) { Write-Error "Exe not found"; exit 1 }
+
+          Move-Item -Path $exePath -Destination $targetDir
+
+          $stagedExe = "$targetDir\$env:APP_EXECUTABLE"
+          windeployqt --release --compiler-runtime --no-translations --no-opengl-sw --qmldir $env:QML_SOURCE_DIR $stagedExe
+          
+          Remove-Item "$targetDir\*.obj", "$targetDir\*.cpp", "$targetDir\*.h", "$targetDir\*.cmake" -ErrorAction SilentlyContinue
+
+      - name: Upload Staged Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: staged-package
+          path: installer/packages/${{ env.PACKAGE_DOMAIN }}/data
+          retention-days: 1
+
+# JOB 4: CREATE ZIP (Simplified)
+  create-application-zip:
+    needs: [run-windeployqt, generate-timestamp]
+    runs-on: windows-2022
+    steps:
+      - name: Download Staged Package
+        uses: actions/download-artifact@v4
+        with:
+          name: staged-package
+          path: staged-data
+
+      # NO MANUAL ZIP STEP NEEDED HERE
+      # GitHub automatically zips the folder when uploading
+
+      - name: Upload Application Zip
+        uses: actions/upload-artifact@v4
+        with:
+          # The name of the zip file the user downloads
+          name: pocqtquick-test-app-${{ needs.generate-timestamp.outputs.ts }}
+          # Upload the FOLDER, not a zip file
+          path: staged-data
+          retention-days: 5
+
+  # JOB 5: CREATE INSTALLER EXE (Uploads DIRECTLY here)
+  create-installer-zip:
+    needs: [run-windeployqt, generate-timestamp]
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Qt (IFW)
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: ${{ env.QT_ARCH }}
+          aqtversion: '>=3.1.6'
+          tools: 'tools_ifw'
+
+      - name: Download Staged Package
+        uses: actions/download-artifact@v4
+        with:
+          name: staged-package
+          path: installer/packages/${{ env.PACKAGE_DOMAIN }}/data
+
+      - name: Build Installer
+        run: |
+          $ts = "${{ needs.generate-timestamp.outputs.ts }}"
+          $installerName = "pocqtquick-test-installer-$ts.exe"
+          
+          $binCreator = Get-ChildItem -Path "..\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe" | Select-Object -First 1 -ExpandProperty FullName
+          
+          cd installer
+          & $binCreator -c config\config.xml -p packages\ $installerName
+          
+          echo "INSTALLER_FILENAME=$installerName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      # FIX: Upload as a distinct artifact immediately
+      - name: Upload Installer Zip
+        uses: actions/upload-artifact@v4
+        with:
+          # This name appears in the GitHub UI
+          name: pocqtquick-test-installer-${{ needs.generate-timestamp.outputs.ts }}
+          path: installer/${{ env.INSTALLER_FILENAME }}
+          retention-days: 5
