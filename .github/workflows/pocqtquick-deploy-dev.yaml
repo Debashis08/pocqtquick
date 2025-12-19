@@ -27,7 +27,7 @@ jobs:
       - name: Generate Timestamp
         id: time
         run: |
-          TS=$(date +'%Y%m%d%H%M')
+          TS=$(date +'%Y%m%d%H%M%S')
           echo "ts=$TS" >> $GITHUB_OUTPUT
           echo "Generated Timestamp: $TS"
 
@@ -78,13 +78,10 @@ jobs:
           path: installer/packages/${{ env.PACKAGE_DOMAIN }}/data
           retention-days: 1
 
-  # JOB 4: CREATE ZIP (Uploads DIRECTLY here)
-  create-portable-zip:
+# JOB 4: CREATE ZIP (Simplified)
+  create-application-zip:
     needs: [run-windeployqt, generate-timestamp]
     runs-on: windows-2022
-    defaults:
-      run:
-        shell: pwsh
     steps:
       - name: Download Staged Package
         uses: actions/download-artifact@v4
@@ -92,27 +89,20 @@ jobs:
           name: staged-package
           path: staged-data
 
-      - name: Create Zip
-        run: |
-          $ts = "${{ needs.generate-timestamp.outputs.ts }}"
-          $zipName = "pocqtquick-Dev-$ts-Portable.zip"
-          
-          Write-Host "Zipping..."
-          Compress-Archive -Path "staged-data\*" -DestinationPath $zipName
-          
-          echo "ZIP_FILENAME=$zipName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      # NO MANUAL ZIP STEP NEEDED HERE
+      # GitHub automatically zips the folder when uploading
 
-      # FIX: Upload as a distinct artifact immediately
-      - name: Upload Portable Zip
+      - name: Upload Application Zip
         uses: actions/upload-artifact@v4
         with:
-          # This name appears in the GitHub UI
-          name: Portable-Zip-${{ needs.generate-timestamp.outputs.ts }}
-          path: ${{ env.ZIP_FILENAME }}
+          # The name of the zip file the user downloads
+          name: pocqtquick-dev-app-${{ needs.generate-timestamp.outputs.ts }}
+          # Upload the FOLDER, not a zip file
+          path: staged-data
           retention-days: 5
 
   # JOB 5: CREATE INSTALLER EXE (Uploads DIRECTLY here)
-  create-installer-exe:
+  create-installer-zip:
     needs: [run-windeployqt, generate-timestamp]
     runs-on: windows-2022
     defaults:
@@ -138,7 +128,7 @@ jobs:
       - name: Build Installer
         run: |
           $ts = "${{ needs.generate-timestamp.outputs.ts }}"
-          $installerName = "pocqtquick-Dev-$ts-Installer.exe"
+          $installerName = "pocqtquick-dev-installer-$ts.exe"
           
           $binCreator = Get-ChildItem -Path "..\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe" | Select-Object -First 1 -ExpandProperty FullName
           
@@ -148,7 +138,7 @@ jobs:
           echo "INSTALLER_FILENAME=$installerName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       # FIX: Upload as a distinct artifact immediately
-      - name: Upload Installer Exe
+      - name: Upload Installer Zip
         uses: actions/upload-artifact@v4
         with:
           # This name appears in the GitHub UI
