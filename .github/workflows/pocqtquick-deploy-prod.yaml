@@ -1,0 +1,248 @@
+name: pocqtquick-deploy-prod
+
+# TRIGGER: Manual Run Only
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version Bump Type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+env:
+  QT_VERSION: '6.10.1'
+  QT_ARCH: 'win64_msvc2022_64'
+  APP_EXECUTABLE: 'counter_app.exe'
+  PACKAGE_DOMAIN: 'com.pocqtquick'
+  QML_SOURCE_DIR: 'source/ui'
+
+jobs:
+  # ==============================================================================
+  # JOB 1: PRE-FLIGHT & CONTEXT
+  # Calculates version and displays summary BEFORE approval
+  # ==============================================================================
+  pre-flight-check:
+    runs-on: ubuntu-latest
+    outputs:
+      new_tag: ${{ steps.calc_version.outputs.new_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for tags
+
+      # 1. Check for Pending PRs (Safety Gate)
+      - name: Check for Pending PRs (Release -> Main)
+        if: github.ref_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_PRS=$(gh pr list --base main --head release --state open --json number --jq 'length')
+          if [ "$OPEN_PRS" -gt 0 ]; then
+            echo "::error::Deployment Failed: An open PR from 'release' to 'main' exists."
+            exit 1
+          fi
+
+      # 2. Calculate Version (Bash logic for Ubuntu)
+      - name: Calculate New Version
+        id: calc_version
+        run: |
+          # Fetch tags
+          git fetch --tags
+          
+          # Get latest tag (fallback to v0.0.0)
+          LATEST_TAG=$(git tag --list 'v*.*.*' --sort=-v:refname | head -n 1)
+          if [ -z "$LATEST_TAG" ]; then LATEST_TAG="v0.0.0"; fi
+          
+          BUMP_TYPE="${{ inputs.bump_type }}"
+          VERSION=${LATEST_TAG#v}
+          IFS='.' read -r -a parts <<< "$VERSION"
+          MAJOR=${parts[0]}; MINOR=${parts[1]}; PATCH=${parts[2]}
+
+          case "$BUMP_TYPE" in
+            "major") MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            "minor") MINOR=$((MINOR + 1)); PATCH=0 ;;
+            "patch") PATCH=$((PATCH + 1)) ;;
+          esac
+          
+          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+
+      # 3. Create Job Summary (Visible on the workflow run page)
+      - name: Generate Summary
+        run: |
+          echo "### 🚀 Deployment Context" >> $GITHUB_STEP_SUMMARY
+          echo "| Setting | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Bump Type** | ${{ inputs.bump_type }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Previous Version** | ${{ steps.calc_version.outputs.last_tag }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Target Version** | **${{ steps.calc_version.outputs.new_tag }}** |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Please check these values before approving the deployment in the next step.**" >> $GITHUB_STEP_SUMMARY
+
+  # ==============================================================================
+  # JOB 2: VALIDATION
+  # Runs linting and tests.
+  # ==============================================================================
+  call-validation:
+    needs: pre-flight-check
+    uses: ./.github/workflows/pocqtquick-validate.yaml
+
+  # ==============================================================================
+  # JOB 3: BUILD ONLY
+  # Recompiles to get artifacts, but SKIPS unit tests (optimization)
+  # ==============================================================================
+  build-for-packaging:
+    needs: call-validation
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+      
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: ${{ env.QT_ARCH }}
+          modules: 'qt5compat'
+
+      - name: Configure and Build (Release)
+        run: |
+          mkdir build; cd build
+          cmake .. -G "Visual Studio 17 2022" -A x64
+          cmake --build . --config Release
+          # Note: Unit tests skipped as they were passed in call-validation
+
+      - name: Upload Raw Binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-binaries
+          path: build/Release/${{ env.APP_EXECUTABLE }}
+          retention-days: 1
+
+  # ==============================================================================
+  # JOB 4: PACKAGE
+  # Windeployqt + IFW Installer
+  # ==============================================================================
+  package:
+    needs: [build-for-packaging, pre-flight-check]
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      VERSION_TAG: ${{ needs.pre-flight-check.outputs.new_tag }}
+      # Naming Convention Applied Here
+      INSTALLER_NAME: "pocqtquick-${{ needs.pre-flight-check.outputs.new_tag }}-Windows-x64.exe"
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Qt (IFW)
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: ${{ env.QT_ARCH }}
+          tools: 'tools_ifw'
+
+      - name: Download Binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: compiled-binaries
+          path: staging
+
+      - name: Run Windeployqt
+        run: |
+          $exePath = "staging\$env:APP_EXECUTABLE"
+          windeployqt --release --compiler-runtime --no-translations --no-opengl-sw --qmldir $env:QML_SOURCE_DIR $exePath
+          Remove-Item "staging\*.obj", "staging\*.cpp", "staging\*.h" -ErrorAction SilentlyContinue
+
+      - name: Build Installer (IFW)
+        run: |
+          $targetDir = "installer\packages\$env:PACKAGE_DOMAIN\data"
+          New-Item -ItemType Directory -Force -Path $targetDir
+          Copy-Item -Path "staging\*" -Destination $targetDir -Recurse
+
+          $binCreator = Get-ChildItem -Path "..\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe" | Select-Object -First 1 -ExpandProperty FullName
+          
+          cd installer
+          # Using the new naming convention
+          & $binCreator -c config\config.xml -p packages\ $env:INSTALLER_NAME
+          
+          echo "INSTALLER_PATH=installer\$env:INSTALLER_NAME" >> $env:GITHUB_ENV
+
+      - name: Upload Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-package
+          path: ${{ env.INSTALLER_PATH }}
+
+  # ==============================================================================
+  # JOB 5: PRODUCTION DEPLOYMENT (Manual Gate)
+  # This job uses the 'production' environment protection rules
+  # ==============================================================================
+  deploy-release:
+    needs: [package, pre-flight-check]
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download Installer
+        uses: actions/download-artifact@v4
+        with:
+          name: installer-package
+          path: dist
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.pre-flight-check.outputs.new_tag }}
+        run: |
+          gh release create $TAG \
+            dist/*.exe \
+            --title "$TAG" \
+            --notes "Production deployment initiated manually from **${{ github.ref_name }}**." \
+            --latest
+
+  # ==============================================================================
+  # JOB 6: SYNC
+  # Creates PR if Release -> Main, logs skip if Main
+  # ==============================================================================
+  create-sync-pr:
+    needs: [deploy-release, pre-flight-check]
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # Scenario A: Release Branch (Do the work)
+      - name: Create Sync PR
+        if: github.ref_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.pre-flight-check.outputs.new_tag }}
+        run: |
+          gh pr create \
+            --base main \
+            --head release \
+            --title "chore(release): Sync $TAG to main" \
+            --body "Automated PR created after production deployment of **$TAG**."
+
+      # Scenario B: Main Branch (Log the skip)
+      - name: Log Sync Skip
+        if: github.ref_name == 'main'
+        run: |
+          echo "::notice title=Sync Skipped::Current branch is 'main'. No back-sync PR is required for hotfixes/rollbacks deployed directly from main."
