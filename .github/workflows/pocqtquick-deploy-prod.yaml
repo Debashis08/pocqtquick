@@ -250,7 +250,7 @@ jobs:
           gh pr create \
             --base main \
             --head "${{ github.ref_name }}" \
-            --title "chore(release): Sync $TAG to main" \
+            --title "chore(${{ github.ref_name }}): Sync $TAG to main" \
             --body "Automated PR created after production deployment of **$TAG**."
 
       - name: Log Sync Skip
