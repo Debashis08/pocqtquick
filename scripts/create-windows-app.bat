@@ -10,9 +10,12 @@ set "QT_ENV_SCRIPT=C:\Qt\6.10.1\msvc2022_64\bin\qtenv2.bat"
 
 :: 2. Project Paths
 set "SOURCE_DIR=D:\repositories\pocqtquick"
-set "BUILD_DIR=D:\repositories\pocqtquick-local-build\build"
-set "DEPLOYMENT_DATA_DIR=D:\repositories\pocqtquickdeployment\packages\com.pocqtquick\data"
+set "QML_DIR=D:\repositories\pocqtquick\source\ui"
 set "APP_NAME=counter_app.exe"
+
+:: 3. Build & Output Paths
+set "BUILD_DIR=D:\repositories\pocqtquick-local-build\build"
+set "LOCAL_APP_DIR=D:\repositories\pocqtquick-local-build\pocqtquick"
 
 :: ==========================================
 :: EXECUTION
@@ -20,12 +23,16 @@ set "APP_NAME=counter_app.exe"
 
 echo.
 echo ----------------------------------------------------------------
-echo STEP 0: Cleaning previous build...
+echo STEP 0: Cleaning previous build artifacts...
 echo ----------------------------------------------------------------
-:: We must remove old VS-generated build files to switch to Ninja
 if exist "%BUILD_DIR%" (
-    echo Removing old build artifacts...
+    echo Removing old build directory...
     rmdir /s /q "%BUILD_DIR%"
+)
+
+if exist "%LOCAL_APP_DIR%" (
+    echo Removing old app directory...
+    rmdir /s /q "%LOCAL_APP_DIR%"
 )
 
 echo.
@@ -39,21 +46,15 @@ echo ----------------------------------------------------------------
 echo STEP 2: Setting up MSVC Compiler (vcvars64)...
 echo ----------------------------------------------------------------
 set "VCVARS_PATH="
-
-:: Using the path found in your logs:
 if exist "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat" (
     set "VCVARS_PATH=C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat"
 )
 
 if "%VCVARS_PATH%"=="" (
     echo [ERROR] Could not find vcvars64.bat!
-    echo Please manually set the path to vcvars64.bat in this script.
     pause
     exit /b 1
 )
-
-echo Found compiler setup script at:
-echo "%VCVARS_PATH%"
 call "%VCVARS_PATH%"
 
 echo.
@@ -63,7 +64,6 @@ echo ----------------------------------------------------------------
 if not exist "%BUILD_DIR%" mkdir "%BUILD_DIR%"
 cd /d "%BUILD_DIR%"
 
-:: Ninja will work because vcvars64 is active
 cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release "%SOURCE_DIR%"
 
 if %errorlevel% neq 0 (
@@ -86,14 +86,34 @@ if %errorlevel% neq 0 (
 
 echo.
 echo ----------------------------------------------------------------
-echo STEP 5: Copying Executable...
+echo STEP 5: Creating Runnable App Folder...
 echo ----------------------------------------------------------------
-:: NOTE: Ninja puts the file in BUILD_DIR directly, NOT in a Release subfolder
-copy /Y "%BUILD_DIR%\%APP_NAME%" "%DEPLOYMENT_DATA_DIR%\%APP_NAME%"
+if not exist "%LOCAL_APP_DIR%" mkdir "%LOCAL_APP_DIR%"
+
+:: FIX: Added "\source\" to the path because CMake placed the binary there
+if not exist "%BUILD_DIR%\source\%APP_NAME%" (
+    echo [ERROR] File not found at: "%BUILD_DIR%\source\%APP_NAME%"
+    echo Please check if the 'source' folder name is correct.
+    pause
+    exit /b 1
+)
+
+copy /Y "%BUILD_DIR%\source\%APP_NAME%" "%LOCAL_APP_DIR%\%APP_NAME%"
 
 echo.
-echo [SUCCESS] App built and copied to:
-echo %DEPLOYMENT_DATA_DIR%\%APP_NAME%
+echo ----------------------------------------------------------------
+echo STEP 6: Running Windeployqt (Dependency Injection)...
+echo ----------------------------------------------------------------
+echo Target:  %LOCAL_APP_DIR%\%APP_NAME%
+echo QML Dir: %QML_DIR%
+
+windeployqt --release --qmldir "%QML_DIR%" "%LOCAL_APP_DIR%\%APP_NAME%"
+
+echo.
+echo ----------------------------------------------------------------
+echo [SUCCESS] Build Complete.
+echo Executable located at:
+echo %LOCAL_APP_DIR%\%APP_NAME%
 echo ----------------------------------------------------------------
 
 pause
