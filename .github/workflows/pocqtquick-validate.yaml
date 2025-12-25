@@ -57,7 +57,7 @@ jobs:
           Write-Host "Linting passed."
 
   # JOB 3: BUILD APP
-  build-app:
+  build-project:
     needs: lint-code
     runs-on: windows-2022
     defaults:
@@ -94,7 +94,7 @@ jobs:
 
   # JOB 4: UNIT TESTS
   run-unit-tests:
-    needs: build-app
+    needs: build-project
     runs-on: windows-2022
     defaults:
       run:
