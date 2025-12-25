@@ -100,7 +100,7 @@ jobs:
           cat <<EOF >> $GITHUB_STEP_SUMMARY
           #### Deployment Context
           
-          ** Trigger Details **
+          **Trigger Details**
           | Attribute | Value |
           | :--- | :--- |
           | User | @${{ github.actor }} |
@@ -108,14 +108,13 @@ jobs:
           | Commit | [${{ github.sha }}]($COMMIT_LINK) |
           | Bump Type | \`${{ inputs.bump_type }}\` |
           
-          ### Release Target
+          **Release Target**
           | Attribute | Value |
           | :--- | :--- |
           | New Version | \`${{ steps.calc_version.outputs.new_tag }}\` |
           | Environment | \`production\` |
           
-          ---
-          *Deployment initiated at $(date -u "+%Y-%m-%d %H:%M:%S UTC")*
+          Deployment initiated at $(date -u "+%Y-%m-%d %H:%M:%S UTC")
           EOF
 
   # ==============================================================================
@@ -234,7 +233,7 @@ jobs:
   # ==============================================================================
   # JOB 5: SYNC
   # ==============================================================================
-  create-sync-pr:
+  create-sync-pull-request:
     needs: [create-github-tag-and-release, prod-deployment-validation]
     runs-on: ubuntu-latest
     permissions:
