@@ -30,7 +30,9 @@ jobs:
     outputs:
       new_tag: ${{ steps.calc_version.outputs.new_tag }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        id: checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -96,21 +98,21 @@ jobs:
           
           # Use heredoc for cleaner multi-line writing
           cat <<EOF >> $GITHUB_STEP_SUMMARY
-          # Deployment Context
+          #### Deployment Context
           
-          ### Trigger Details
+          ** Trigger Details **
           | Attribute | Value |
           | :--- | :--- |
-          | **User** | @${{ github.actor }} |
-          | **Branch** | [${{ github.ref_name }}](${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }}) |
-          | **Commit** | [${{ github.sha }}]($COMMIT_LINK) |
-          | **Bump Type** | \`${{ inputs.bump_type }}\` |
+          | User | @${{ github.actor }} |
+          | Branch | [${{ github.ref_name }}](${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }}) |
+          | Commit | [${{ github.sha }}]($COMMIT_LINK) |
+          | Bump Type | \`${{ inputs.bump_type }}\` |
           
           ### Release Target
           | Attribute | Value |
           | :--- | :--- |
-          | **New Version** | **${{ steps.calc_version.outputs.new_tag }}** |
-          | **Environment** | \`production\` |
+          | New Version | \`${{ steps.calc_version.outputs.new_tag }}\` |
+          | Environment | \`production\` |
           
           ---
           *Deployment initiated at $(date -u "+%Y-%m-%d %H:%M:%S UTC")*
@@ -128,7 +130,7 @@ jobs:
   # JOB 3: PACKAGE
   # Downloads artifact from validation, creates Installer
   # ==============================================================================
-  package:
+  package-windows-application:
     needs: [call-validation, prod-deployment-validation]
     runs-on: windows-2022
     defaults:
@@ -203,8 +205,8 @@ jobs:
   # ==============================================================================
   # JOB 4: PRODUCTION DEPLOYMENT (Manual Gate)
   # ==============================================================================
-  deploy-release:
-    needs: [package, prod-deployment-validation]
+  create-github-tag-and-release:
+    needs: [package-windows-application, prod-deployment-validation]
     runs-on: ubuntu-latest
     environment: production
     permissions:
@@ -233,7 +235,7 @@ jobs:
   # JOB 5: SYNC
   # ==============================================================================
   create-sync-pr:
-    needs: [deploy-release, prod-deployment-validation]
+    needs: [create-github-tag-and-release, prod-deployment-validation]
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
