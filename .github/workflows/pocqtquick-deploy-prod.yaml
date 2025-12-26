@@ -140,8 +140,9 @@ jobs:
       INSTALLER_NAME: "pocqtquick-${{ needs.prod-deployment-validation.outputs.new_tag }}-Windows-x64.exe"
     
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Install Qt (IFW)
         uses: jurplel/install-qt-action@v3
         with:
