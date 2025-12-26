@@ -46,18 +46,21 @@ jobs:
             echo "::error::Production deployment is RESTRICTED. You cannot deploy from branch '$CURRENT_BRANCH'. Only 'main' or branches starting with 'release' are allowed."
             exit 1
           fi
-          echo "Branch '$CURRENT_BRANCH' is authorized for deployment."
 
-      # 2. Check for Pending PRs
-      # Checks if there is an open PR from the CURRENT release branch to main
+      # 2. STRICT GATE: Check for Pending PRs
+      # This enforces your rule: "if another developer has merged some new code to release they can not push that into prod"
+      # until the previous PR is merged.
       - name: Check for Pending PRs to main
         if: startsWith(github.ref_name, 'release')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           OPEN_PRS=$(gh pr list --base main --head "${{ github.ref_name }}" --state open --json number --jq 'length')
+          
           if [ "$OPEN_PRS" -gt 0 ]; then
-            echo "::error::Deployment Failed: An open PR from '${{ github.ref_name }}' to 'main' exists."
+            echo "::error::DEPLOYMENT BLOCKED: An open PR from '${{ github.ref_name }}' to 'main' already exists."
+            echo "::error::Reason 1: If this is an old Auto-PR, you must MERGE it before deploying new code."
+            echo "::error::Reason 2: If this is a Manual PR, you must CLOSE it. Manual PRs are not allowed to main in this flow."
             exit 1
           fi
 
@@ -90,7 +93,7 @@ jobs:
           NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
           echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
 
-      # 4. Create Job Summary (Industry Standard Format)
+      # 4. Generate Summary
       - name: Generate Summary
         run: |
           # Create a clickable link for the commit
@@ -99,22 +102,14 @@ jobs:
           # Use heredoc for cleaner multi-line writing
           cat <<EOF >> $GITHUB_STEP_SUMMARY
           #### Deployment Context
-          
-          **Trigger Details**
-          | Attribute | Value |
-          | :--- | :--- |
-          | User | @${{ github.actor }} |
-          | Branch | [${{ github.ref_name }}](${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }}) |
-          | Commit | [${{ github.sha }}]($COMMIT_LINK) |
-          | Bump Type | \`${{ inputs.bump_type }}\` |
-          
-          **Release Target**
-          | Attribute | Value |
-          | :--- | :--- |
-          | New Version | \`${{ steps.calc_version.outputs.new_tag }}\` |
-          | Environment | \`production\` |
-          
-          Deployment initiated at $(date -u "+%Y-%m-%d %H:%M:%S UTC")
+          **Environment**: \`production\`
+          **Status**: Ready to proceed
+          **User**: @${{ github.actor }}
+          **Branch**: [${{ github.ref_name }}](${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }})
+          **Commit**: [${{ github.sha }}]($COMMIT_LINK)
+          **Bump Type**: \`${{ inputs.bump_type }}\`
+          **New Version**: \`${{ steps.calc_version.outputs.new_tag }}\`
+          **Time stamp**: $(date -u "+%Y-%m-%d %H:%M:%S UTC")
           EOF
 
   # ==============================================================================
@@ -155,7 +150,7 @@ jobs:
       - name: Download Binaries from Validation
         uses: actions/download-artifact@v4
         with:
-          name: compiled-app  # MATCHES NAME IN VALIDATE YAML
+          name: compiled-app
           path: staging
 
       # 2. Locate the Exe (Since 'compiled-app' contains the whole 'build/' folder)
@@ -163,15 +158,7 @@ jobs:
         run: |
           # Find the .exe recursively inside the staging folder
           $exeFile = Get-ChildItem -Path "staging" -Filter $env:APP_EXECUTABLE -Recurse | Select-Object -First 1
-          
-          if (-not $exeFile) {
-             Write-Error "Could not find '$env:APP_EXECUTABLE' inside the downloaded artifact!"
-             exit 1
-          }
-          
-          Write-Host "Found executable at: $($exeFile.FullName)"
-          
-          # Move it to a clean "deploy" folder to simplify windeployqt
+          if (-not $exeFile) { Write-Error "Exe not found"; exit 1 }
           New-Item -ItemType Directory -Force -Path "deploy"
           Move-Item -Path $exeFile.FullName -Destination "deploy\$env:APP_EXECUTABLE"
 
@@ -232,10 +219,35 @@ jobs:
             --latest
 
   # ==============================================================================
-  # JOB 5: SYNC
+  # JOB 5: UNLOCK MERGE (THE "KEY")
+  # Runs ONLY after successful release. Marks the commit as "production-verified".
+  # ==============================================================================
+  unlock-main-merge:
+    needs: create-github-tag-and-release
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    steps:
+      - name: Set 'production-verified' Status
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/statuses/${{ github.sha }} \
+            -f state='success' \
+            -f target_url='${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
+            -f description='Code successfully deployed to Production. Merge allowed.' \
+            -f context='production-verified'
+
+  # ==============================================================================
+  # JOB 6: AUTO-SYNC PR
+  # Creates the PR only now. It will instantly be green because of Job 5.
   # ==============================================================================
   create-sync-pull-request:
-    needs: [create-github-tag-and-release, prod-deployment-validation]
+    needs: [unlock-main-merge, prod-deployment-validation]
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -253,9 +265,4 @@ jobs:
             --base main \
             --head "${{ github.ref_name }}" \
             --title "chore(${{ github.ref_name }}): Sync $TAG to main" \
-            --body "Automated PR created after production deployment of **$TAG**."
-
-      - name: Log Sync Skip
-        if: github.ref_name == 'main'
-        run: |
-          echo "::notice title=Sync Skipped::Current branch is 'main'. No back-sync PR is required."
+            --body "Automated PR created after production deployment of **$TAG**. <br> **Status:** Production Verified"
