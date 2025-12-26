@@ -8,14 +8,40 @@ setlocal enabledelayedexpansion
 :: 1. Qt Environment
 set "QT_ENV_SCRIPT=C:\Qt\6.10.1\msvc2022_64\bin\qtenv2.bat"
 
-:: 2. Project Paths
-set "SOURCE_DIR=D:\repositories\pocqtquick"
-set "QML_DIR=D:\repositories\pocqtquick\source\ui"
+:: ==========================================
+:: PATH RESOLUTION (NON-HARDCODED)
+:: ==========================================
+
+:: Directory of this script: <repo-root>\scripts
+set "SCRIPT_DIR=%~dp0"
+set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+
+:: Repo root: <repo-root>
+for %%I in ("%SCRIPT_DIR%\..") do set "REPO_ROOT=%%~fI"
+
+:: Project paths
+set "SOURCE_DIR=%REPO_ROOT%"
+set "QML_DIR=%SOURCE_DIR%\source\ui"
 set "APP_NAME=counter_app.exe"
 
-:: 3. Build & Output Paths
-set "BUILD_DIR=D:\repositories\pocqtquick-local-build\build"
-set "LOCAL_APP_DIR=D:\repositories\pocqtquick-local-build\pocqtquick"
+:: Build & output paths (outside repo root)
+for %%I in ("%REPO_ROOT%\..\pocqtquick-local-build") do set "BUILD_ROOT=%%~fI"
+
+set "BUILD_DIR=%BUILD_ROOT%\build"
+set "LOCAL_APP_DIR=%BUILD_ROOT%\pocqtquick"
+
+
+echo.
+echo ================================================================
+echo  DYNAMIC PATHS DETECTED
+echo ================================================================
+echo  Source:      %SOURCE_DIR%
+echo  QML Dir:     %QML_DIR%
+echo  App Name:    %APP_NAME%
+echo  Build Dir:   %BUILD_DIR%
+echo  Output Dir:  %LOCAL_APP_DIR%
+echo ================================================================
+
 
 :: ==========================================
 :: EXECUTION
