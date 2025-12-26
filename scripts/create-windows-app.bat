@@ -2,6 +2,16 @@
 setlocal enabledelayedexpansion
 
 :: ==========================================
+:: ANSI COLOR SETUP
+:: ==========================================
+for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
+
+set "BLUE=%ESC%[34m"
+set "GREEN=%ESC%[32m"
+set "RED=%ESC%[31m"
+set "RESET=%ESC%[0m"
+
+:: ==========================================
 :: CONFIGURATION
 :: ==========================================
 
@@ -30,96 +40,101 @@ for %%I in ("%REPO_ROOT%\..\pocqtquick-local-build") do set "BUILD_ROOT=%%~fI"
 set "BUILD_DIR=%BUILD_ROOT%\build"
 set "LOCAL_APP_DIR=%BUILD_ROOT%\pocqtquick"
 
-
 echo.
-echo ================================================================
-echo  DYNAMIC PATHS DETECTED
-echo ================================================================
-echo  Source:      %SOURCE_DIR%
-echo  QML Dir:     %QML_DIR%
-echo  App Name:    %APP_NAME%
-echo  Build Dir:   %BUILD_DIR%
-echo  Output Dir:  %LOCAL_APP_DIR%
-echo ================================================================
-
+echo %BLUE%===============================================================%RESET%
+echo %BLUE% DYNAMIC PATHS DETECTED%RESET%
+echo %BLUE%===============================================================%RESET%
+echo %BLUE% Source:      %SOURCE_DIR%%RESET%
+echo %BLUE% QML Dir:     %QML_DIR%%RESET%
+echo %BLUE% App Name:    %APP_NAME%%RESET%
+echo %BLUE% Build Dir:   %BUILD_DIR%%RESET%
+echo %BLUE% Output Dir:  %LOCAL_APP_DIR%%RESET%
+echo %BLUE%===============================================================%RESET%
 
 :: ==========================================
 :: EXECUTION
 :: ==========================================
 
 echo.
-echo ----------------------------------------------------------------
-echo STEP 0: Cleaning previous build artifacts...
-echo ----------------------------------------------------------------
+echo %BLUE%----------------------------------------------------------------%RESET%
+echo %BLUE%STEP 0: Cleaning previous build artifacts...%RESET%
+echo %BLUE%----------------------------------------------------------------%RESET%
+
 if exist "%BUILD_DIR%" (
-    echo Removing old build directory...
+    echo %BLUE%Removing old build directory...%RESET%
     rmdir /s /q "%BUILD_DIR%"
 )
 
 if exist "%LOCAL_APP_DIR%" (
-    echo Removing old app directory...
+    echo %BLUE%Removing old app directory...%RESET%
     rmdir /s /q "%LOCAL_APP_DIR%"
 )
 
 echo.
-echo ----------------------------------------------------------------
-echo STEP 1: Setting up Qt Environment...
-echo ----------------------------------------------------------------
+echo %BLUE%----------------------------------------------------------------%RESET%
+echo %BLUE%STEP 1: Setting up Qt Environment...%RESET%
+echo %BLUE%----------------------------------------------------------------%RESET%
 call "%QT_ENV_SCRIPT%"
 
 echo.
-echo ----------------------------------------------------------------
-echo STEP 2: Setting up MSVC Compiler (vcvars64)...
-echo ----------------------------------------------------------------
+echo %BLUE%----------------------------------------------------------------%RESET%
+echo %BLUE%STEP 2: Setting up MSVC Compiler (vcvars64)...%RESET%
+echo %BLUE%----------------------------------------------------------------%RESET%
+
 set "VCVARS_PATH="
 if exist "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat" (
     set "VCVARS_PATH=C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat"
 )
 
 if "%VCVARS_PATH%"=="" (
-    echo [ERROR] Could not find vcvars64.bat!
+    echo %RED%[ERROR] Could not find vcvars64.bat!%RESET%
     pause
     exit /b 1
 )
+
 call "%VCVARS_PATH%"
 
 echo.
-echo ----------------------------------------------------------------
-echo STEP 3: Configuring CMake (Ninja)...
-echo ----------------------------------------------------------------
+echo %BLUE%----------------------------------------------------------------%RESET%
+echo %BLUE%STEP 3: Configuring CMake (Ninja)...%RESET%
+echo %BLUE%----------------------------------------------------------------%RESET%
+
 if not exist "%BUILD_DIR%" mkdir "%BUILD_DIR%"
 cd /d "%BUILD_DIR%"
 
 cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release "%SOURCE_DIR%"
 
 if %errorlevel% neq 0 (
-    echo [ERROR] CMake Configuration failed.
+    echo %RED%[ERROR] CMake configuration failed.%RESET%
     pause
     exit /b %errorlevel%
 )
 
 echo.
-echo ----------------------------------------------------------------
-echo STEP 4: Compiling Application...
-echo ----------------------------------------------------------------
+echo %BLUE%----------------------------------------------------------------%RESET%
+echo %BLUE%STEP 4: Compiling Application...%RESET%
+echo %BLUE%----------------------------------------------------------------%RESET%
+
 cmake --build . --config Release
 
 if %errorlevel% neq 0 (
-    echo [ERROR] Compilation failed.
+    echo %RED%[ERROR] Compilation failed.%RESET%
     pause
     exit /b %errorlevel%
 )
 
 echo.
-echo ----------------------------------------------------------------
-echo STEP 5: Creating Runnable App Folder...
-echo ----------------------------------------------------------------
+echo %BLUE%----------------------------------------------------------------%RESET%
+echo %BLUE%STEP 5: Creating Runnable App Folder...%RESET%
+echo %BLUE%----------------------------------------------------------------%RESET%
+
 if not exist "%LOCAL_APP_DIR%" mkdir "%LOCAL_APP_DIR%"
 
-:: FIX: Added "\source\" to the path because CMake placed the binary there
+:: FIX: Added "\source\" because CMake places the binary there
 if not exist "%BUILD_DIR%\source\%APP_NAME%" (
-    echo [ERROR] File not found at: "%BUILD_DIR%\source\%APP_NAME%"
-    echo Please check if the 'source' folder name is correct.
+    echo %RED%[ERROR] File not found:%RESET%
+    echo %RED%        %BUILD_DIR%\source\%APP_NAME%%RESET%
+    echo %RED%Please verify the output directory or target name.%RESET%
     pause
     exit /b 1
 )
@@ -127,19 +142,19 @@ if not exist "%BUILD_DIR%\source\%APP_NAME%" (
 copy /Y "%BUILD_DIR%\source\%APP_NAME%" "%LOCAL_APP_DIR%\%APP_NAME%"
 
 echo.
-echo ----------------------------------------------------------------
-echo STEP 6: Running Windeployqt (Dependency Injection)...
-echo ----------------------------------------------------------------
-echo Target:  %LOCAL_APP_DIR%\%APP_NAME%
-echo QML Dir: %QML_DIR%
+echo %BLUE%----------------------------------------------------------------%RESET%
+echo %BLUE%STEP 6: Running Windeployqt (Dependency Injection)...%RESET%
+echo %BLUE%----------------------------------------------------------------%RESET%
+echo %BLUE%Target:  %LOCAL_APP_DIR%\%APP_NAME%%RESET%
+echo %BLUE%QML Dir: %QML_DIR%%RESET%
 
 windeployqt --release --qmldir "%QML_DIR%" "%LOCAL_APP_DIR%\%APP_NAME%"
 
 echo.
-echo ----------------------------------------------------------------
-echo [SUCCESS] Build Complete.
-echo Executable located at:
-echo %LOCAL_APP_DIR%\%APP_NAME%
-echo ----------------------------------------------------------------
-
+echo %GREEN%----------------------------------------------------------------%RESET%
+echo %GREEN%[SUCCESS] Build Complete.%RESET%
+echo %GREEN%Executable located at:%RESET%
+echo %GREEN%%LOCAL_APP_DIR%\%APP_NAME%%RESET%
+echo %GREEN%----------------------------------------------------------------%RESET%
+echo.
 pause
