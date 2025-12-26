@@ -157,4 +157,5 @@ echo %GREEN%Executable located at:%RESET%
 echo %GREEN%%LOCAL_APP_DIR%\%APP_NAME%%RESET%
 echo %GREEN%----------------------------------------------------------------%RESET%
 echo.
+
 pause
