@@ -99,22 +99,14 @@ jobs:
           # Use heredoc for cleaner multi-line writing
           cat <<EOF >> $GITHUB_STEP_SUMMARY
           #### Deployment Context
-          
-          **Trigger Details**
-          | Attribute | Value |
-          | :--- | :--- |
-          | User | @${{ github.actor }} |
-          | Branch | [${{ github.ref_name }}](${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }}) |
-          | Commit | [${{ github.sha }}]($COMMIT_LINK) |
-          | Bump Type | \`${{ inputs.bump_type }}\` |
-          
-          **Release Target**
-          | Attribute | Value |
-          | :--- | :--- |
-          | New Version | \`${{ steps.calc_version.outputs.new_tag }}\` |
-          | Environment | \`production\` |
-          
-          Deployment initiated at $(date -u "+%Y-%m-%d %H:%M:%S UTC")
+          **Environment**: \`production\`
+          **Status**: Ready to proceed
+          **User**: @${{ github.actor }}
+          **Branch**: [${{ github.ref_name }}](${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }})
+          **Commit**: [${{ github.sha }}]($COMMIT_LINK)
+          **Bump Type**: \`${{ inputs.bump_type }}\`
+          **New Version**: \`${{ steps.calc_version.outputs.new_tag }}\`
+          **Time stamp**: $(date -u "+%Y-%m-%d %H:%M:%S UTC")
           EOF
 
   # ==============================================================================
