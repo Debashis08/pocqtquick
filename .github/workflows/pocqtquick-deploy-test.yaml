@@ -16,13 +16,13 @@ jobs:
   # JOB 1: VALIDATION & BUILD
   # UPDATE: Added 'if' condition to restrict execution to 'main' and 'release' branches.
   # If this job skips, all subsequent jobs will also skip.
-  call-validation:
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release')
+  validation:
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/')
     uses: ./.github/workflows/pocqtquick-validate.yaml
 
   # JOB 2: TIMESTAMP
   generate-timestamp:
-    needs: call-validation
+    needs: validation
     runs-on: ubuntu-latest
     outputs:
       ts: ${{ steps.time.outputs.ts }}
@@ -36,7 +36,7 @@ jobs:
 
   # JOB 3: WINDEPLOYQT
   run-windeployqt:
-    needs: [call-validation, generate-timestamp]
+    needs: [validation, generate-timestamp]
     runs-on: windows-2022
     
     # MANUAL CHECK: This will pause the workflow here if you configure 
