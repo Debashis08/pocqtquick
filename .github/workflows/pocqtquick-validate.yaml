@@ -3,9 +3,9 @@ name: pocqtquick-validate
 on:
   workflow_call:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, reopened]
     branches:
-      - release
+      - 'release/*'
       - main
   workflow_dispatch:
 
@@ -14,29 +14,45 @@ env:
   QT_ARCH: 'win64_msvc2022_64'
 
 jobs:
-  # JOB 1: VALIDATE BRANCH POLICY (Formerly enforce-branch-strategy)
+  # JOB 1: VALIDATE BRANCH POLICY
   validate-branch-policy:
     runs-on: ubuntu-latest
     steps:
       # --- SCENARIO A: Pull Request Checks ---
+      # Logic:
+      # 1. feature/* -> release/* (OK)
+      # 2. release/* -> main (OK)
+      # 3. hotfix/* -> main OR release/* (OK)
       - name: Block invalid PR path
         if: |
           github.event_name == 'pull_request' &&
-          !((startsWith(github.event.pull_request.head.ref, 'feature-') && github.event.pull_request.base.ref == 'release') || 
-            (github.event.pull_request.head.ref == 'release' && github.event.pull_request.base.ref == 'main'))
+          !(
+            (startsWith(github.event.pull_request.head.ref, 'feature/') && startsWith(github.event.pull_request.base.ref, 'release/')) ||
+            (startsWith(github.event.pull_request.head.ref, 'feature/') && startsWith(github.event.pull_request.base.ref, 'hotfix/')) ||
+            (startsWith(github.event.pull_request.head.ref, 'release/') && github.event.pull_request.base.ref == 'main') ||
+            (startsWith(github.event.pull_request.head.ref, 'hotfix/') && github.event.pull_request.base.ref == 'main')
+          )
         run: |
-          echo "::error::Invalid PR Path. Allowed: 'feature-* -> release' or 'release -> main'."
+          echo "::error::Invalid PR Path. Allowed paths:"
+          echo "  - feature/* -> release/*"
+          echo "  - feature/* -> hotfix/*"
+          echo "  - release/* -> main"
+          echo "  - hotfix/* -> main"
           exit 1
 
       - name: Approve valid PR path
         if: |
           github.event_name == 'pull_request' &&
-          ((startsWith(github.event.pull_request.head.ref, 'feature-') && github.event.pull_request.base.ref == 'release') || 
-           (github.event.pull_request.head.ref == 'release' && github.event.pull_request.base.ref == 'main'))
-        run: echo "PR Path Validated."
+          (
+            (startsWith(github.event.pull_request.head.ref, 'feature/') && startsWith(github.event.pull_request.base.ref, 'release/')) ||
+            (startsWith(github.event.pull_request.head.ref, 'feature/') && startsWith(github.event.pull_request.base.ref, 'hotfix/')) ||
+            (startsWith(github.event.pull_request.head.ref, 'release/') && github.event.pull_request.base.ref == 'main') ||
+            (startsWith(github.event.pull_request.head.ref, 'hotfix/') && github.event.pull_request.base.ref == 'main')
+          )
+        run: |
+          echo "PR Path Validated: ${{ github.event.pull_request.head.ref }} -> ${{ github.event.pull_request.base.ref }}"
 
-     # --- SCENARIO B: Manual Run Checks (Updated) ---
-      # Logic: If it is a manual trigger, always allow it.
+      # --- SCENARIO B: Manual Run Checks ---
       - name: Approve Manual Run
         if: github.event_name == 'workflow_dispatch'
         run: echo "Manual validation run initiated on branch '${{ github.ref_name }}'"

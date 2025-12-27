@@ -1,9 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: ==========================================
-:: ANSI COLOR SETUP
-:: ==========================================
+:: ANSI color setup
 for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
 
 set "BLUE=%ESC%[34m"
@@ -11,18 +9,14 @@ set "GREEN=%ESC%[32m"
 set "RED=%ESC%[31m"
 set "RESET=%ESC%[0m"
 
-:: ==========================================
-:: CONFIGURATION
-:: ==========================================
+:: configurations
 
 :: 1. Tools Paths
 set "QT_ENV_SCRIPT=C:\Qt\6.10.1\msvc2022_64\bin\qtenv2.bat"
 set "IFW_BIN=C:\Qt\Tools\QtInstallerFramework\4.10\bin"
 
 
-:: ==========================================
-:: PATH RESOLUTION (NON-HARDCODED)
-:: ==========================================
+:: path resolution
 
 :: Directory of this script: <repo-root>\scripts
 set "SCRIPT_DIR=%~dp0"
@@ -61,9 +55,7 @@ echo %BLUE% Installer Dir:  %INSTALLER_DIR%%RESET%
 echo %BLUE% Local App Dir:  %LOCAL_APP_DIR%%RESET%
 echo %BLUE%===============================================================%RESET%
 
-:: ==========================================
-:: EXECUTION
-:: ==========================================
+:: execution steps
 
 echo.
 echo %BLUE%----------------------------------------------------------------%RESET%
@@ -140,7 +132,7 @@ echo %BLUE%----------------------------------------------------------------%RESE
 
 if not exist "%LOCAL_APP_DIR%" mkdir "%LOCAL_APP_DIR%"
 
-:: FIX: Added "\source\" because CMake places the binary there
+:: fix: Added "\source\" because CMake places the binary there
 if not exist "%BUILD_DIR%\source\%APP_NAME%" (
     echo %RED%[ERROR] File not found:%RESET%
     echo %RED%        %BUILD_DIR%\source\%APP_NAME%%RESET%
