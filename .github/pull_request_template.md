@@ -3,7 +3,6 @@
 1. While creating Pull Request, please provide proper description and check the boxes for specific changes made.
 
 ---
-### PR from feature to release
 
 **Description**
 

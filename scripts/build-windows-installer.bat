@@ -42,7 +42,7 @@ set "LOCAL_APP_DIR=%BUILD_ROOT%\pocqtquick"
 
 echo.
 echo %BLUE%===============================================================%RESET%
-echo %BLUE% DYNAMIC PATHS DETECTED%RESET%
+echo %BLUE% Dynamic Paths Detected%RESET%
 echo %BLUE%===============================================================%RESET%
 echo %BLUE% Source:         %SOURCE_DIR%%RESET%
 echo %BLUE% QML Dir:        %QML_DIR%%RESET%
@@ -59,7 +59,7 @@ echo %BLUE%===============================================================%RESET
 
 echo.
 echo %BLUE%----------------------------------------------------------------%RESET%
-echo %BLUE%STEP 0: Cleaning previous build artifacts...%RESET%
+echo %BLUE%Step 0: Cleaning previous build artifacts%RESET%
 echo %BLUE%----------------------------------------------------------------%RESET%
 
 if exist "%BUILD_DIR%" (
@@ -74,13 +74,13 @@ if exist "%LOCAL_APP_DIR%" (
 
 echo.
 echo %BLUE%----------------------------------------------------------------%RESET%
-echo %BLUE%STEP 1: Setting up Qt Environment...%RESET%
+echo %BLUE%Step 1: Setting up Qt Environment%RESET%
 echo %BLUE%----------------------------------------------------------------%RESET%
 call "%QT_ENV_SCRIPT%"
 
 echo.
 echo %BLUE%----------------------------------------------------------------%RESET%
-echo %BLUE%STEP 2: Setting up MSVC Compiler (vcvars64)...%RESET%
+echo %BLUE%Step 2: Setting up MSVC Compiler (vcvars64)%RESET%
 echo %BLUE%----------------------------------------------------------------%RESET%
 
 set "VCVARS_PATH="
@@ -98,7 +98,7 @@ call "%VCVARS_PATH%"
 
 echo.
 echo %BLUE%----------------------------------------------------------------%RESET%
-echo %BLUE%STEP 3: Configuring CMake (Ninja)...%RESET%
+echo %BLUE%Step 3: Configuring CMake (Ninja)%RESET%
 echo %BLUE%----------------------------------------------------------------%RESET%
 
 if not exist "%BUILD_DIR%" mkdir "%BUILD_DIR%"
@@ -114,7 +114,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo %BLUE%----------------------------------------------------------------%RESET%
-echo %BLUE%STEP 4: Compiling Application...%RESET%
+echo %BLUE%Step 4: Compiling Application%RESET%
 echo %BLUE%----------------------------------------------------------------%RESET%
 
 cmake --build . --config Release
@@ -127,7 +127,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo %BLUE%----------------------------------------------------------------%RESET%
-echo %BLUE%STEP 5: Creating Runnable App Folder...%RESET%
+echo %BLUE%Step 5: Creating Runnable App Folder%RESET%
 echo %BLUE%----------------------------------------------------------------%RESET%
 
 if not exist "%LOCAL_APP_DIR%" mkdir "%LOCAL_APP_DIR%"
@@ -145,7 +145,7 @@ copy /Y "%BUILD_DIR%\source\%APP_NAME%" "%LOCAL_APP_DIR%\%APP_NAME%"
 
 echo.
 echo %BLUE%----------------------------------------------------------------%RESET%
-echo %BLUE%STEP 6: Running Windeployqt (Dependency Injection)...%RESET%
+echo %BLUE%Step 6: Running Windeployqt (Dependency Injection)%RESET%
 echo %BLUE%----------------------------------------------------------------%RESET%
 echo %BLUE%Target:  %LOCAL_APP_DIR%\%APP_NAME%%RESET%
 echo %BLUE%QML Dir: %QML_DIR%%RESET%
@@ -154,7 +154,7 @@ windeployqt --release --qmldir "%QML_DIR%" "%LOCAL_APP_DIR%\%APP_NAME%"
 
 echo.
 echo %BLUE%----------------------------------------------------------------%RESET%
-echo %BLUE%STEP 7: Generating Installer (binarycreator)...%RESET%
+echo %BLUE%Step 7: Generating Installer (binarycreator)...%RESET%
 echo %BLUE%----------------------------------------------------------------%RESET%
 
 :: Create the output directory if it doesn't exist
