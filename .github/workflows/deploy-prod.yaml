@@ -1,6 +1,6 @@
 name: pocqtquick-deploy-prod
 
-# TRIGGER: Manual Run Only
+# trigger: Manual run only
 on:
   workflow_dispatch:
     inputs:
@@ -22,9 +22,7 @@ env:
   QML_SOURCE_DIR: 'source/ui'
 
 jobs:
-  # ==============================================================================
-  # JOB 1: PRE-FLIGHT & CONTEXT
-  # ==============================================================================
+  # job 1: production deployment validation
   prod-deployment-validation:
     runs-on: ubuntu-latest
     outputs:
@@ -37,7 +35,6 @@ jobs:
           fetch-depth: 0
 
       # 1. Validate Branch Permissions
-      # Allows 'main' OR any branch starting with 'release' (e.g., release/v1.0)
       - name: Validate Branch Permissions
         run: |
           CURRENT_BRANCH="${{ github.ref_name }}"
@@ -48,8 +45,7 @@ jobs:
           fi
           echo "Branch '$CURRENT_BRANCH' is authorized for deployment."
 
-      # 2. Check for Pending PRs
-      # Checks if there is an open PR from the CURRENT release branch to main
+      # 2. Check for Pending PRs to main
       - name: Check for Pending PRs to main
         if: startsWith(github.ref_name, 'release/') || startsWith(github.ref_name, 'hotfix/')
         env:
@@ -90,7 +86,7 @@ jobs:
           NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
           echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
 
-      # 4. Create Job Summary (Industry Standard Format)
+      # 4. Create Job Summary
       - name: Generate Summary
         run: |
           # Create a clickable link for the commit
@@ -109,18 +105,14 @@ jobs:
           **Time stamp**: $(date -u "+%Y-%m-%d %H:%M:%S UTC")
           EOF
 
-  # ==============================================================================
-  # JOB 2: VALIDATION & BUILD
+  # job 2: validation
   # Calls the workflow that builds and uploads 'compiled-app'
-  # ==============================================================================
   validation:
     needs: prod-deployment-validation
-    uses: ./.github/workflows/pocqtquick-validate.yaml
+    uses: ./.github/workflows/validate.yaml
 
-  # ==============================================================================
-  # JOB 3: PACKAGE
+  # job 3: package windows application
   # Downloads artifact from validation, creates Installer
-  # ==============================================================================
   package-windows-application:
     needs: [validation, prod-deployment-validation]
     runs-on: windows-2022
@@ -142,7 +134,6 @@ jobs:
           arch: ${{ env.QT_ARCH }}
           tools: 'tools_ifw'
 
-      # 
       # 1. Download the artifact produced by 'validation'
       - name: Download Binaries from Validation
         uses: actions/download-artifact@v4
@@ -194,9 +185,7 @@ jobs:
           name: installer-package
           path: ${{ env.INSTALLER_PATH }}
 
-  # ==============================================================================
-  # JOB 4: PRODUCTION DEPLOYMENT (Manual Gate)
-  # ==============================================================================
+  # job 4: produce github tag and release
   create-github-tag-and-release:
     needs: [package-windows-application, prod-deployment-validation]
     runs-on: ubuntu-latest
@@ -223,9 +212,7 @@ jobs:
             --notes "Production deployment initiated manually from **${{ github.ref_name }}**." \
             --latest
 
-  # ==============================================================================
-  # JOB 5: SYNC
-  # ==============================================================================
+  # job 5: create sync pull request to main
   create-sync-pull-request:
     needs: [create-github-tag-and-release, prod-deployment-validation]
     runs-on: ubuntu-latest
