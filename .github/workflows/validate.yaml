@@ -1,4 +1,4 @@
-name: pocqtquick-validate
+name: validate
 
 on:
   workflow_call:
@@ -6,7 +6,8 @@ on:
     types: [opened, synchronize, reopened]
     branches:
       - 'release/*'
-      - main
+      - 'hotfix/*'
+      - 'main'
   workflow_dispatch:
 
 env:
@@ -14,12 +15,12 @@ env:
   QT_ARCH: 'win64_msvc2022_64'
 
 jobs:
-  # JOB 1: VALIDATE BRANCH POLICY
+  # job 1: validate branch policy
   validate-branch-policy:
     runs-on: ubuntu-latest
     steps:
-      # --- SCENARIO A: Pull Request Checks ---
-      # Logic:
+      # --- scenario A: Pull Request Checks ---
+      # logic:
       # 1. feature/* -> release/* (OK)
       # 2. release/* -> main (OK)
       # 3. hotfix/* -> main OR release/* (OK)
@@ -33,7 +34,8 @@ jobs:
             (startsWith(github.event.pull_request.head.ref, 'hotfix/') && github.event.pull_request.base.ref == 'main')
           )
         run: |
-          echo "::error::Invalid PR Path. Allowed paths:"
+          echo "::error::Invalid PR Path: ${{ github.event.pull_request.head.ref }} -> ${{ github.event.pull_request.base.ref }}"
+          echo " \Allowed PR paths are:"
           echo "  - feature/* -> release/*"
           echo "  - feature/* -> hotfix/*"
           echo "  - release/* -> main"
@@ -52,12 +54,12 @@ jobs:
         run: |
           echo "PR Path Validated: ${{ github.event.pull_request.head.ref }} -> ${{ github.event.pull_request.base.ref }}"
 
-      # --- SCENARIO B: Manual Run Checks ---
+      # --- scenario B: Manual Run Checks ---
       - name: Approve Manual Run
         if: github.event_name == 'workflow_dispatch'
         run: echo "Manual validation run initiated on branch '${{ github.ref_name }}'"
 
-  # JOB 2: LINT CODE
+  # job 2: Lint code
   lint-code:
     needs: validate-branch-policy
     runs-on: windows-2022 
@@ -72,7 +74,7 @@ jobs:
           # cmake --build build --target check-format
           Write-Host "Linting passed."
 
-  # JOB 3: BUILD APP
+  # job 3: Build Project
   build-project:
     needs: lint-code
     runs-on: windows-2022
@@ -108,7 +110,7 @@ jobs:
           path: build/
           retention-days: 1
 
-  # JOB 4: UNIT TESTS
+  # job 4: Run Unit Tests
   run-unit-tests:
     needs: build-project
     runs-on: windows-2022

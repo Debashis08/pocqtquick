@@ -1,6 +1,6 @@
-name: pocqtquick-deploy-dev
+name: deploy-dev
 
-# TRIGGER: Manual run ONLY (on any branch)
+# trigger: Manual run only (on any branch)
 on:
   workflow_dispatch:
 
@@ -9,17 +9,16 @@ env:
   QT_ARCH: 'win64_msvc2022_64'
   APP_EXECUTABLE: 'counter_app.exe'
   PACKAGE_DOMAIN: 'com.pocqtquick'
-  # Note: QML dir must exist in the repo checkout
   QML_SOURCE_DIR: 'source/ui'
 
 jobs:
-  # JOB 1: VALIDATION & BUILD
-  call-validation:
-    uses: ./.github/workflows/pocqtquick-validate.yaml
+  # job 1: validation and build
+  validation:
+    uses: ./.github/workflows/validate.yaml
 
-  # JOB 2: TIMESTAMP
+  # job 2: generate timestamp
   generate-timestamp:
-    needs: call-validation
+    needs: validation
     runs-on: ubuntu-latest
     outputs:
       ts: ${{ steps.time.outputs.ts }}
@@ -31,9 +30,9 @@ jobs:
           echo "ts=$TS" >> $GITHUB_OUTPUT
           echo "Generated Timestamp: $TS"
 
-  # JOB 3: WINDEPLOYQT
-  run-windeployqt:
-    needs: [call-validation, generate-timestamp]
+  # job 3: deploy for windows
+  deploy-windows:
+    needs: [validation, generate-timestamp]
     runs-on: windows-2022
     defaults:
       run:
@@ -78,9 +77,9 @@ jobs:
           path: installer/packages/${{ env.PACKAGE_DOMAIN }}/data
           retention-days: 1
 
-# JOB 4: CREATE ZIP (Simplified)
+  # job 4: create application zip
   create-application-zip:
-    needs: [run-windeployqt, generate-timestamp]
+    needs: [deploy-windows, generate-timestamp]
     runs-on: windows-2022
     steps:
       - name: Download Staged Package
@@ -89,21 +88,17 @@ jobs:
           name: staged-package
           path: staged-data
 
-      # NO MANUAL ZIP STEP NEEDED HERE
-      # GitHub automatically zips the folder when uploading
-
       - name: Upload Application Zip
         uses: actions/upload-artifact@v4
         with:
           # The name of the zip file the user downloads
           name: pocqtquick-dev-app-${{ needs.generate-timestamp.outputs.ts }}
-          # Upload the FOLDER, not a zip file
           path: staged-data
           retention-days: 5
 
-  # JOB 5: CREATE INSTALLER EXE (Uploads DIRECTLY here)
+  # job 5: create installer zip
   create-installer-zip:
-    needs: [run-windeployqt, generate-timestamp]
+    needs: [deploy-windows, generate-timestamp]
     runs-on: windows-2022
     defaults:
       run:
@@ -137,11 +132,9 @@ jobs:
           
           echo "INSTALLER_FILENAME=$installerName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      # FIX: Upload as a distinct artifact immediately
       - name: Upload Installer Zip
         uses: actions/upload-artifact@v4
         with:
-          # This name appears in the GitHub UI
           name: pocqtquick-dev-installer-${{ needs.generate-timestamp.outputs.ts }}
           path: installer/${{ env.INSTALLER_FILENAME }}
           retention-days: 5
