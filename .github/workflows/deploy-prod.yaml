@@ -1,4 +1,4 @@
-name: pocqtquick-deploy-prod
+name: deploy-prod
 
 # trigger: Manual run only
 on:
