@@ -31,7 +31,7 @@ jobs:
           echo "Generated Timestamp: $TS"
 
   # job 3: deploy for windows
-  deploy-windows:
+  deploy-app-windows:
     needs: [validation, generate-timestamp]
     runs-on: windows-2022
     defaults:
@@ -79,7 +79,7 @@ jobs:
 
   # job 4: create application zip
   create-application-zip:
-    needs: [deploy-windows, generate-timestamp]
+    needs: [deploy-app-windows, generate-timestamp]
     runs-on: windows-2022
     steps:
       - name: Download Staged Package
@@ -98,7 +98,7 @@ jobs:
 
   # job 5: create installer zip
   create-installer-zip:
-    needs: [deploy-windows, generate-timestamp]
+    needs: [deploy-app-windows, generate-timestamp]
     runs-on: windows-2022
     defaults:
       run:

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Controls.Material // 1. Import the Material module
 
 // ApplicationWindow provides the main window for the application.
 ApplicationWindow {
@@ -10,20 +11,25 @@ ApplicationWindow {
     visible: true
     title: "QML Counter"
 
+    // 2. Force the Light theme
+    Material.theme: Material.Light
+
     // Center the main content column within the window.
     ColumnLayout {
         anchors.centerIn: parent
         spacing: 20
 
         // This label displays the counter's value.
-        // The 'text' property is bound to the 'count' property of our C++ backend.
-        // When the C++ 'countChanged' signal is emitted, this text will update automatically.
         Label {
             id: countLabel
-            text: counter.count // "counter" is the name we'll register in main.cpp
+            text: counter.count
             Layout.alignment: Qt.AlignHCenter
             font.pixelSize: 48
             font.bold: true
+
+            // Ensure text is dark since we are forcing a light background
+            // (Material.Light usually handles this, but this is a safe fallback)
+            color: "black"
         }
 
         // A row layout for the buttons.
@@ -31,8 +37,6 @@ ApplicationWindow {
             Layout.alignment: Qt.AlignHCenter
             spacing: 15
 
-            // The "Increment" button.
-            // When clicked, it calls the 'increment()' method on our C++ object.
             Button {
                 text: "Increment"
                 onClicked: {
@@ -40,8 +44,6 @@ ApplicationWindow {
                 }
             }
 
-            // The "Reset" button.
-            // When clicked, it calls the 'reset()' method on our C++ object.
             Button {
                 text: "Reset"
                 onClicked: {
