@@ -10,14 +10,10 @@ set "RED=%ESC%[31m"
 set "RESET=%ESC%[0m"
 
 :: configurations
-
 :: 1. Qt Environment
 set "QT_ENV_SCRIPT=C:\Qt\6.10.1\msvc2022_64\bin\qtenv2.bat"
 
-
 :: path resolution
-
-
 :: Directory of this script: <repo-root>\scripts
 set "SCRIPT_DIR=%~dp0"
 set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
@@ -37,43 +33,34 @@ set "BUILD_DIR=%BUILD_ROOT%\build"
 set "LOCAL_APP_DIR=%BUILD_ROOT%\pocqtquick"
 
 echo.
-echo %BLUE%===============================================================%RESET%
-echo %BLUE% DYNAMIC PATHS DETECTED%RESET%
-echo %BLUE%===============================================================%RESET%
+echo %BLUE% Dynamic Paths Detected%RESET%
 echo %BLUE% Source:      %SOURCE_DIR%%RESET%
 echo %BLUE% QML Dir:     %QML_DIR%%RESET%
 echo %BLUE% App Name:    %APP_NAME%%RESET%
 echo %BLUE% Build Dir:   %BUILD_DIR%%RESET%
 echo %BLUE% Output Dir:  %LOCAL_APP_DIR%%RESET%
-echo %BLUE%===============================================================%RESET%
 
 :: execution steps
-
 echo.
-echo %BLUE%----------------------------------------------------------------%RESET%
-echo %BLUE%STEP 0: Cleaning previous build artifacts...%RESET%
-echo %BLUE%----------------------------------------------------------------%RESET%
+echo %BLUE%Step 0: Cleaning previous build artifacts%RESET%
 
 if exist "%BUILD_DIR%" (
-    echo %BLUE%Removing old build directory...%RESET%
+    echo Removing old build directory
     rmdir /s /q "%BUILD_DIR%"
 )
 
 if exist "%LOCAL_APP_DIR%" (
-    echo %BLUE%Removing old app directory...%RESET%
+    echo Removing old app directory
     rmdir /s /q "%LOCAL_APP_DIR%"
 )
 
 echo.
-echo %BLUE%----------------------------------------------------------------%RESET%
-echo %BLUE%STEP 1: Setting up Qt Environment...%RESET%
-echo %BLUE%----------------------------------------------------------------%RESET%
+echo %BLUE%Step 1: Setting up Qt Environment%RESET%
+
 call "%QT_ENV_SCRIPT%"
 
 echo.
-echo %BLUE%----------------------------------------------------------------%RESET%
-echo %BLUE%STEP 2: Setting up MSVC Compiler (vcvars64)...%RESET%
-echo %BLUE%----------------------------------------------------------------%RESET%
+echo %BLUE%Step 2: Setting up MSVC Compiler (vcvars64)%RESET%
 
 set "VCVARS_PATH="
 if exist "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat" (
@@ -89,9 +76,7 @@ if "%VCVARS_PATH%"=="" (
 call "%VCVARS_PATH%"
 
 echo.
-echo %BLUE%----------------------------------------------------------------%RESET%
-echo %BLUE%STEP 3: Configuring CMake (Ninja)...%RESET%
-echo %BLUE%----------------------------------------------------------------%RESET%
+echo %BLUE%Step 3: Configuring CMake (Ninja)%RESET%
 
 if not exist "%BUILD_DIR%" mkdir "%BUILD_DIR%"
 cd /d "%BUILD_DIR%"
@@ -105,9 +90,7 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo %BLUE%----------------------------------------------------------------%RESET%
-echo %BLUE%STEP 4: Compiling Application...%RESET%
-echo %BLUE%----------------------------------------------------------------%RESET%
+echo %BLUE%Step 4: Compiling Application%RESET%
 
 cmake --build . --config Release
 
@@ -118,9 +101,7 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo %BLUE%----------------------------------------------------------------%RESET%
-echo %BLUE%STEP 5: Creating Runnable App Folder...%RESET%
-echo %BLUE%----------------------------------------------------------------%RESET%
+echo %BLUE%Step 5: Creating Runnable App Folder%RESET%
 
 if not exist "%LOCAL_APP_DIR%" mkdir "%LOCAL_APP_DIR%"
 
@@ -136,20 +117,17 @@ if not exist "%BUILD_DIR%\source\%APP_NAME%" (
 copy /Y "%BUILD_DIR%\source\%APP_NAME%" "%LOCAL_APP_DIR%\%APP_NAME%"
 
 echo.
-echo %BLUE%----------------------------------------------------------------%RESET%
-echo %BLUE%STEP 6: Running Windeployqt (Dependency Injection)...%RESET%
-echo %BLUE%----------------------------------------------------------------%RESET%
+echo %BLUE%Step 6: Running Windeployqt (Dependency Injection)%RESET%
+
 echo %BLUE%Target:  %LOCAL_APP_DIR%\%APP_NAME%%RESET%
 echo %BLUE%QML Dir: %QML_DIR%%RESET%
 
 windeployqt --release --qmldir "%QML_DIR%" "%LOCAL_APP_DIR%\%APP_NAME%"
 
 echo.
-echo %GREEN%----------------------------------------------------------------%RESET%
 echo %GREEN%[SUCCESS] Build Complete.%RESET%
-echo %GREEN%Executable located at:%RESET%
+echo %GREEN%Executable created at:%RESET%
 echo %GREEN%%LOCAL_APP_DIR%\%APP_NAME%%RESET%
-echo %GREEN%----------------------------------------------------------------%RESET%
 echo.
 
 pause
