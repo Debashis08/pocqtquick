@@ -1,4 +1,4 @@
-name: pocqtquick-deploy-test
+name: deploy-test
 
 # trigger: Manual run only (on any branch)
 on:

@@ -1,4 +1,4 @@
-name: pocqtquick-deploy-dev
+name: deploy-dev
 
 # trigger: Manual run only (on any branch)
 on:
