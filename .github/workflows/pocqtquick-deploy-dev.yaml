@@ -14,12 +14,12 @@ env:
 
 jobs:
   # JOB 1: VALIDATION & BUILD
-  call-validation:
+  validation:
     uses: ./.github/workflows/pocqtquick-validate.yaml
 
   # JOB 2: TIMESTAMP
   generate-timestamp:
-    needs: call-validation
+    needs: validation
     runs-on: ubuntu-latest
     outputs:
       ts: ${{ steps.time.outputs.ts }}
@@ -33,7 +33,7 @@ jobs:
 
   # JOB 3: WINDEPLOYQT
   run-windeployqt:
-    needs: [call-validation, generate-timestamp]
+    needs: [validation, generate-timestamp]
     runs-on: windows-2022
     defaults:
       run:
