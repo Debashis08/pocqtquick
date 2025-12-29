@@ -40,9 +40,9 @@ jobs:
           echo "  - hotfix/* -> main"
           exit 1
 
-      # 2. [NEW] Check for Frozen Release Branch
+      # 2. Check for Frozen Release Branch
       # Logic: If we are merging INTO a release/hotfix branch, 
-      # ensure that release/hotfix branch does NOT currently have an open PR to main.
+      # ensure that release/* or hotfix/* branch does NOT currently have an open PR to main.
       - name: Check if target branch is locked
         if: |
           github.event_name == 'pull_request' &&
