@@ -43,7 +43,7 @@ jobs:
       # 2. [NEW] Check for Frozen Release Branch
       # Logic: If we are merging INTO a release/hotfix branch, 
       # ensure that release/hotfix branch does NOT currently have an open PR to main.
-      - name: Check if target release/hotfix branch is locked
+      - name: Check if target branch is locked
         if: |
           github.event_name == 'pull_request' &&
           (startsWith(github.base_ref, 'release/') || startsWith(github.base_ref, 'hotfix/'))
@@ -54,13 +54,12 @@ jobs:
           
           echo "Checking lock status for target branch: $TARGET_BRANCH..."
           
-          # Check if the target branch (release/x) already has an open PR to main
-          OPEN_PRS=$(gh pr list --base main --head "$TARGET_BRANCH" --state open --json number --jq 'length')
+          OPEN_PRS=$(gh pr list --repo "${{ github.repository }}" --base main --head "$TARGET_BRANCH" --state open --json number --jq 'length')
           
           if [ "$OPEN_PRS" -gt 0 ]; then
             echo "::error::Validation Failed: The branch '$TARGET_BRANCH' is currently LOCKED."
-            echo "::error::Reason: An automated PR from '$TARGET_BRANCH' to 'main' already exists."
-            echo "::error::Action: You cannot merge new features into '$TARGET_BRANCH' until the  pending PR is merged to main."
+            echo "::error::Reason: An automated PR from '$TARGET_BRANCH' to 'main' already exists (Deployment pending)."
+            echo "::error::Action: You cannot merge new features into '$TARGET_BRANCH' until the pending PR is merged to main."
             exit 1
           fi
           
