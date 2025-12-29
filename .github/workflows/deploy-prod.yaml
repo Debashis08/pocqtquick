@@ -216,7 +216,6 @@ jobs:
   create-sync-pull-request:
     needs: [create-github-tag-and-release, prod-deployment-validation]
     runs-on: ubuntu-latest
-    environment: production
     permissions:
       pull-requests: write
       contents: read
