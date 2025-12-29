@@ -58,7 +58,7 @@ jobs:
           
           if [ "$OPEN_PRS" -gt 0 ]; then
             echo "::error::Validation Failed: The branch '$TARGET_BRANCH' is currently LOCKED."
-            echo "::error::Reason: An automated PR from '$TARGET_BRANCH' to 'main' already exists (Deployment pending)."
+            echo "::error::Reason: An automated PR from '$TARGET_BRANCH' to 'main' already exists."
             echo "::error::Action: You cannot merge new features into '$TARGET_BRANCH' until the pending PR is merged to main."
             exit 1
           fi
