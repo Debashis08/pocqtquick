@@ -65,7 +65,7 @@ Before building the project, ensure you have the following installed:
 * **Qt SDK**: (Version 6.10.1 recommended) with Qt Quick and Qt Qml modules.
 * **CMake**: Version 3.16 or higher.
 
-### Build Instructions
+### Build Instructions 
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/Debashis08/pocqtquick.git
