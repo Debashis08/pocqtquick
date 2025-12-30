@@ -15,7 +15,7 @@ env:
   QT_ARCH: 'win64_msvc2022_64'
 
 jobs:
-  # job 1: validate branch policy
+  # job 1: validate branch policy 
   validate-branch-policy:
     runs-on: ubuntu-latest
     steps:
