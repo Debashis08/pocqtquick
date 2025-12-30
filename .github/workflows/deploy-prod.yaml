@@ -45,17 +45,28 @@ jobs:
           fi
           echo "Branch '$CURRENT_BRANCH' is authorized for deployment."
 
-      # 2. Check for Pending PRs to main
+     # 2. Check for ANY Pending PRs from release/ or hotfix/ to main
       - name: Check for Pending PRs to main
         if: startsWith(github.ref_name, 'release/') || startsWith(github.ref_name, 'hotfix/')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          OPEN_PRS=$(gh pr list --base main --head "${{ github.ref_name }}" --state open --json number --jq 'length')
-          if [ "$OPEN_PRS" -gt 0 ]; then
-            echo "::error::Deployment Failed: An open PR from '${{ github.ref_name }}' to 'main' exists."
+          # 1. Get head branch names of ALL open PRs targeting 'main'
+          EXISTING_PRS=$(gh pr list --base main --state open --json headRefName --jq '.[].headRefName')
+          
+          # 2. Filter for branches starting with release/ or hotfix/
+          # '|| true' ensures the script doesn't fail immediately if grep finds nothing
+          CONFLICTING_BRANCHES=$(echo "$EXISTING_PRS" | grep -E '^(release|hotfix)/' || true)
+
+          # 3. If conflicting branches were found, fail the pipeline
+          if [ -n "$CONFLICTING_BRANCHES" ]; then
+            echo "::error::Deployment Locked: There are pending PRs to 'main' from the following branches:"
+            echo "$CONFLICTING_BRANCHES"
+            echo "::error::Process Violation: You must merge pending release/* or hotfix/* PRs into 'main' before deploying a new version to prevent regression."
             exit 1
           fi
+          
+          echo "No blocking PRs found. Proceeding..."
 
       # 3. Calculate New Version
       - name: Calculate New Version
