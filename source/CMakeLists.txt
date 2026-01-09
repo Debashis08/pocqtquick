@@ -2,6 +2,23 @@
 # We list all the necessary source and resource files to build it.
 # CMake's AUTORCC will handle the qml.qrc file.
 # CMake's AUTOMOC will handle the counter.h header.
+# Try to load secrets from the root directory (Project Root)
+# CMAKE_SOURCE_DIR usually points to 'root' if you build from top level.
+include("${CMAKE_SOURCE_DIR}/Secrets.local.cmake" OPTIONAL)
+
+# Read the environment variables (from file OR from CI/CD system)
+set(GOOGLE_CLIENT_ID "$ENV{GOOGLE_CLIENT_ID}")
+set(GOOGLE_CLIENT_SECRET "$ENV{GOOGLE_CLIENT_SECRET}")
+
+# Verify keys exist (Optional: Warn if missing)
+if(NOT GOOGLE_CLIENT_ID OR NOT GOOGLE_CLIENT_SECRET)
+    message(WARNING "Google OAuth keys are missing. Auth will not work.")
+endif()
+
+# Pass these into the C++ Code as Preprocessor Macros
+add_compile_definitions(APP_GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID}")
+add_compile_definitions(APP_GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET}")
+
 add_executable(counter_app WIN32
     main.cpp
     qml.qrc

@@ -15,6 +15,12 @@ class Counter : public QObject
     // NOTIFY: a signal that is emitted whenever the property's value changes.
     Q_PROPERTY(int count READ count NOTIFY countChanged)
 
+    // --- NEW: Expose Secrets to QML ---
+    // CONSTANT means the value never changes during the app runtime
+    Q_PROPERTY(QString clientId READ clientId CONSTANT)
+    Q_PROPERTY(QString clientSecret READ clientSecret CONSTANT)
+    // ----------------------------------
+
 public:
     // Explicit constructor.
     explicit Counter(QObject *parent = nullptr);
@@ -22,6 +28,9 @@ public:
     // Getter function for the 'count' property.
     int count() const;
 
+    QString clientId() const;
+    QString clientSecret() const;
+    
     // Q_INVOKABLE makes a C++ function callable from QML.
     Q_INVOKABLE void increment();
     Q_INVOKABLE void reset();
