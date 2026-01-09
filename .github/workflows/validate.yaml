@@ -121,6 +121,10 @@ jobs:
           modules: 'qt5compat'
 
       - name: Configure and Build
+        # Inject Secrets here so CMake can read them
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: |
           mkdir build
           cd build
