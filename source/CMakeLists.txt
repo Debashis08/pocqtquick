@@ -16,8 +16,8 @@ if(NOT GOOGLE_CLIENT_ID OR NOT GOOGLE_CLIENT_SECRET)
 endif()
 
 # Pass these into the C++ Code as Preprocessor Macros
-add_compile_definitions(APP_GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID}")
-add_compile_definitions(APP_GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET}")
+add_compile_definitions(APP_GOOGLE_CLIENT_ID=\"${GOOGLE_CLIENT_ID}\")
+add_compile_definitions(APP_GOOGLE_CLIENT_SECRET=\"${GOOGLE_CLIENT_SECRET}\")
 
 add_executable(counter_app WIN32
     main.cpp
