@@ -12,6 +12,26 @@ int Counter::count() const
     return m_count;
 }
 
+QString Counter::clientId() const
+{
+    // APP_GOOGLE_CLIENT_ID is defined in source/CMakeLists.txt
+#ifdef APP_GOOGLE_CLIENT_ID
+    return QStringLiteral(APP_GOOGLE_CLIENT_ID);
+#else
+    return QString(""); // Return empty if not found
+#endif
+}
+
+QString Counter::clientSecret() const
+{
+#ifdef APP_GOOGLE_CLIENT_SECRET
+    return QStringLiteral(APP_GOOGLE_CLIENT_SECRET);
+#else
+    return QString("");
+#endif
+}
+
+
 // Increments the counter and emits the countChanged signal.
 void Counter::increment()
 {

@@ -16,6 +16,7 @@ jobs:
   validation:
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/')
     uses: ./.github/workflows/validate.yaml
+    secrets: inherit
 
   # job 2: generate timestamp
   generate-timestamp:
