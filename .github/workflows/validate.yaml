@@ -2,6 +2,12 @@ name: validate
 
 on:
   workflow_call:
+    secrets:
+      GOOGLE_CLIENT_ID:
+        required: true
+      GOOGLE_CLIENT_SECRET:
+        required: true
+
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
