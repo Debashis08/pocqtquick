@@ -121,6 +121,7 @@ jobs:
   validation:
     needs: prod-deployment-validation
     uses: ./.github/workflows/validate.yaml
+    secrets: inherit
 
   # job 3: package windows application
   # Downloads artifact from validation, creates Installer
