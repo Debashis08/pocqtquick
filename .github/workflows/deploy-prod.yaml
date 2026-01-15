@@ -121,6 +121,8 @@ jobs:
   validation:
     needs: prod-deployment-validation
     uses: ./.github/workflows/validate.yaml
+    with:
+      target_env: 'production'
     secrets: inherit
 
   # job 3: package windows application
