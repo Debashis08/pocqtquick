@@ -12,6 +12,6 @@ jobs:
     - uses: actions/labeler@v5
       with:
         # Points to the config file we created in Step A
-        configuration-path: .github/labeler.yml
+        configuration-path: .github/labeler.yaml
         # Sync labels helps remove labels if files are reverted/removed from PR
         sync-labels: true
