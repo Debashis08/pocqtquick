@@ -101,18 +101,18 @@ jobs:
 
           # Check Client ID
           if ([string]::IsNullOrWhiteSpace($env:GOOGLE_CLIENT_ID)) {
-              Write-Host "::error::CRITICAL FAILURE: Secret 'GOOGLE_CLIENT_ID' is missing or empty!" -ForegroundColor Red
+              Write-Host "::error::CRITICAL FAILURE: Secret 'GOOGLE_CLIENT_ID' is missing or empty!"
               $failed = $true
           } else {
-              Write-Host "[-] GOOGLE_CLIENT_ID     : [OK]" -ForegroundColor Green
+              Write-Host "::notice::[-] GOOGLE_CLIENT_ID     : [OK]"
           }
 
           # Check Client Secret
           if ([string]::IsNullOrWhiteSpace($env:GOOGLE_CLIENT_SECRET)) {
-              Write-Host "::error::CRITICAL FAILURE: Secret 'GOOGLE_CLIENT_SECRET' is missing or empty!" -ForegroundColor Red
+              Write-Host "::error::CRITICAL FAILURE: Secret 'GOOGLE_CLIENT_SECRET' is missing or empty!"
               $failed = $true
           } else {
-              Write-Host "[-] GOOGLE_CLIENT_SECRET : [OK]" -ForegroundColor Green
+              Write-Host "::notice::[-] GOOGLE_CLIENT_SECRET : [OK]"
           }
 
           # Hard Fail if any secret was missing
@@ -158,20 +158,9 @@ jobs:
       run:
         shell: pwsh
     
-    environment: ${{ inputs.target_env || 'dev' }}
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
-      # --- NEW DEBUG STEP (Repeated for visibility in Test Job) ---
-      - name: Debug Environment Context
-        env:
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-        run: |
-          Write-Host "Current Environment: ${{ inputs.target_env || 'dev' }}"
-          if ($env:GOOGLE_CLIENT_ID) { Write-Host "Secret GOOGLE_CLIENT_ID is available." }
-      # ------------------------------------------------------------
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -191,9 +180,6 @@ jobs:
           path: build
 
       - name: Run Unit Tests
-        env:
-           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: |
           cd build
           ctest -C Release --output-on-failure
