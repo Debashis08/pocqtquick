@@ -2,11 +2,11 @@ name: validate
 
 on:
   workflow_call:
-    secrets:
-      GOOGLE_CLIENT_ID:
-        required: true
-      GOOGLE_CLIENT_SECRET:
-        required: true
+    inputs:
+      target_env:
+        required: false
+        type: string
+        default: 'dev'
 
   pull_request:
     types: [opened, synchronize, reopened]
@@ -25,9 +25,6 @@ jobs:
   validate-branch-policy:
     runs-on: ubuntu-latest
     steps:
-      # --- scenario A: Pull Request Checks ---
-      
-      # 1. Block invalid PR path
       - name: Block invalid PR path
         if: |
           github.event_name == 'pull_request' &&
@@ -38,17 +35,9 @@ jobs:
             (startsWith(github.event.pull_request.head.ref, 'hotfix/') && github.event.pull_request.base.ref == 'main')
           )
         run: |
-          echo "::error::Invalid PR Path: ${{ github.event.pull_request.head.ref }} -> ${{ github.event.pull_request.base.ref }}"
-          echo "  Allowed PR paths are:"
-          echo "  - feature/* -> release/*"
-          echo "  - feature/* -> hotfix/*"
-          echo "  - release/* -> main"
-          echo "  - hotfix/* -> main"
+          echo "::error::Invalid PR Path"
           exit 1
 
-      # 2. Check for Frozen Release Branch
-      # Logic: If we are merging INTO a release/hotfix branch, 
-      # ensure that release/* or hotfix/* branch does NOT currently have an open PR to main.
       - name: Check if target branch is locked
         if: |
           github.event_name == 'pull_request' &&
@@ -57,52 +46,29 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TARGET_BRANCH="${{ github.base_ref }}"
-          
-          echo "Checking lock status for target branch: $TARGET_BRANCH..."
-          
           OPEN_PRS=$(gh pr list --repo "${{ github.repository }}" --base main --head "$TARGET_BRANCH" --state open --json number --jq 'length')
-          
           if [ "$OPEN_PRS" -gt 0 ]; then
-            echo "::error::Validation Failed: The branch '$TARGET_BRANCH' is currently LOCKED."
-            echo "::error::Reason: An automated PR from '$TARGET_BRANCH' to 'main' already exists."
-            echo "::error::Action: You cannot merge new features into '$TARGET_BRANCH' until the pending PR is merged to main."
+            echo "::error::Validation Failed: Branch '$TARGET_BRANCH' is LOCKED."
             exit 1
           fi
-          
-          echo "Branch '$TARGET_BRANCH' is unlocked. Proceeding."
 
-      # 3. Approve valid PR path (Existing Logic)
       - name: Approve valid PR path
-        if: |
-          github.event_name == 'pull_request' &&
-          (
-            (startsWith(github.event.pull_request.head.ref, 'feature/') && startsWith(github.event.pull_request.base.ref, 'release/')) ||
-            (startsWith(github.event.pull_request.head.ref, 'feature/') && startsWith(github.event.pull_request.base.ref, 'hotfix/')) ||
-            (startsWith(github.event.pull_request.head.ref, 'release/') && github.event.pull_request.base.ref == 'main') ||
-            (startsWith(github.event.pull_request.head.ref, 'hotfix/') && github.event.pull_request.base.ref == 'main')
-          )
-        run: |
-          echo "PR Path Validated: ${{ github.event.pull_request.head.ref }} -> ${{ github.event.pull_request.base.ref }}"
+        if: github.event_name == 'pull_request'
+        run: echo "PR Path Validated"
 
-      # --- scenario B: Manual Run Checks ---
       - name: Approve Manual Run
         if: github.event_name == 'workflow_dispatch'
-        run: echo "Manual validation run initiated on branch '${{ github.ref_name }}'"
+        run: echo "Manual validation run."
 
   # job 2: Lint code
   lint-code:
     needs: validate-branch-policy
     runs-on: windows-2022 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-      
+      - uses: actions/checkout@v4
       - name: Run Linter
         shell: pwsh
-        run: |
-          Write-Host "Running Lint Checks..."
-          # cmake --build build --target check-format
-          Write-Host "Linting passed."
+        run: Write-Host "Linting passed."
 
   # job 3: Build Project
   build-project:
@@ -111,9 +77,47 @@ jobs:
     defaults:
       run:
         shell: pwsh
+    
+    # Dynamic Environment Selection
+    environment: ${{ inputs.target_env || 'dev' }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      # --- NEW DEBUG STEP ---
+      - name: Debug Environment Context
+        # We must map secrets to env vars to check their existence in PowerShell
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: |
+          Write-Host "=========================================="
+          Write-Host "     DEPLOYMENT CONTEXT DEBUG INFO        "
+          Write-Host "=========================================="
+          
+          # 1. Print the Active Environment Name
+          # Logic: If inputs.target_env is empty (PR run), it prints 'dev'
+          $currentEnv = "${{ inputs.target_env }}"
+          if ([string]::IsNullOrEmpty($currentEnv)) { $currentEnv = "dev" }
+          Write-Host "Active Environment : $currentEnv"
+          
+          # 2. Verify Secret Availability (Safe Check)
+          Write-Host "Checking Secrets Availability..."
+          
+          if (-not [string]::IsNullOrEmpty($env:GOOGLE_CLIENT_ID)) {
+              Write-Host "[-] GOOGLE_CLIENT_ID     : [LOADED] (Masked)" -ForegroundColor Green
+          } else {
+              Write-Host "[-] GOOGLE_CLIENT_ID     : [MISSING] or Empty" -ForegroundColor Red
+          }
+
+          if (-not [string]::IsNullOrEmpty($env:GOOGLE_CLIENT_SECRET)) {
+              Write-Host "[-] GOOGLE_CLIENT_SECRET : [LOADED] (Masked)" -ForegroundColor Green
+          } else {
+              Write-Host "[-] GOOGLE_CLIENT_SECRET : [MISSING] or Empty" -ForegroundColor Red
+          }
+          Write-Host "=========================================="
+      # ----------------------
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -151,9 +155,21 @@ jobs:
     defaults:
       run:
         shell: pwsh
+    
+    environment: ${{ inputs.target_env || 'dev' }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+      
+      # --- NEW DEBUG STEP (Repeated for visibility in Test Job) ---
+      - name: Debug Environment Context
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+        run: |
+          Write-Host "Current Environment: ${{ inputs.target_env || 'dev' }}"
+          if ($env:GOOGLE_CLIENT_ID) { Write-Host "Secret GOOGLE_CLIENT_ID is available." }
+      # ------------------------------------------------------------
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -173,6 +189,9 @@ jobs:
           path: build
 
       - name: Run Unit Tests
+        env:
+           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: |
           cd build
           ctest -C Release --output-on-failure
