@@ -93,6 +93,12 @@ jobs:
         run: |
           $failed = $false
 
+          # 1. Define ANSI Color Codes (Universal)
+          $esc = [char]27
+          $Red = "$esc[31m"
+          $Green = "$esc[32m"
+          $Reset = "$esc[0m"
+
           # Print the Active Environment Name
           # Logic: If inputs.target_env is empty (PR run), it prints 'dev'
           $currentEnv = "${{ inputs.target_env }}"
@@ -104,7 +110,7 @@ jobs:
               Write-Host "::error::CRITICAL FAILURE: Secret 'GOOGLE_CLIENT_ID' is missing or empty!"
               $failed = $true
           } else {
-              Write-Host "::notice::[-] GOOGLE_CLIENT_ID     : [OK]"
+              Write-Host "${Green}[-] GOOGLE_CLIENT_ID     : [OK]${Reset}"
           }
 
           # Check Client Secret
@@ -112,12 +118,12 @@ jobs:
               Write-Host "::error::CRITICAL FAILURE: Secret 'GOOGLE_CLIENT_SECRET' is missing or empty!"
               $failed = $true
           } else {
-              Write-Host "::notice::[-] GOOGLE_CLIENT_SECRET : [OK]"
+              Write-Host "${Green}[-] GOOGLE_CLIENT_SECRET : [OK]${Reset}"
           }
 
           # Hard Fail if any secret was missing
           if ($failed) {
-              Write-Host "One or more required secrets are missing. Stopping pipeline."
+              Write-Host "${Red}One or more required secrets are missing. Stopping pipeline.${Reset}"
               exit 1
           }
 
