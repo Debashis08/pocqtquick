@@ -93,6 +93,12 @@ jobs:
         run: |
           $failed = $false
 
+          # Print the Active Environment Name
+          # Logic: If inputs.target_env is empty (PR run), it prints 'dev'
+          $currentEnv = "${{ inputs.target_env }}"
+          if ([string]::IsNullOrEmpty($currentEnv)) { $currentEnv = "dev" }
+          Write-Host "Active Environment : $currentEnv"
+
           # Check Client ID
           if ([string]::IsNullOrWhiteSpace($env:GOOGLE_CLIENT_ID)) {
               Write-Host "::error::CRITICAL FAILURE: Secret 'GOOGLE_CLIENT_ID' is missing or empty!" -ForegroundColor Red
