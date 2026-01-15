@@ -85,39 +85,35 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # --- NEW DEBUG STEP ---
-      - name: Debug Environment Context
-        # We must map secrets to env vars to check their existence in PowerShell
+      - name: Validate Secrets
         env:
+          # Map secrets to env vars so the shell script can check them
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: |
-          Write-Host "=========================================="
-          Write-Host "     DEPLOYMENT CONTEXT DEBUG INFO        "
-          Write-Host "=========================================="
-          
-          # 1. Print the Active Environment Name
-          # Logic: If inputs.target_env is empty (PR run), it prints 'dev'
-          $currentEnv = "${{ inputs.target_env }}"
-          if ([string]::IsNullOrEmpty($currentEnv)) { $currentEnv = "dev" }
-          Write-Host "Active Environment : $currentEnv"
-          
-          # 2. Verify Secret Availability (Safe Check)
-          Write-Host "Checking Secrets Availability..."
-          
-          if (-not [string]::IsNullOrEmpty($env:GOOGLE_CLIENT_ID)) {
-              Write-Host "[-] GOOGLE_CLIENT_ID     : [LOADED] (Masked)" -ForegroundColor Green
+          $failed = $false
+
+          # Check Client ID
+          if ([string]::IsNullOrWhiteSpace($env:GOOGLE_CLIENT_ID)) {
+              Write-Host "::error::CRITICAL FAILURE: Secret 'GOOGLE_CLIENT_ID' is missing or empty!" -ForegroundColor Red
+              $failed = $true
           } else {
-              Write-Host "[-] GOOGLE_CLIENT_ID     : [MISSING] or Empty" -ForegroundColor Red
+              Write-Host "[-] GOOGLE_CLIENT_ID     : [OK]" -ForegroundColor Green
           }
 
-          if (-not [string]::IsNullOrEmpty($env:GOOGLE_CLIENT_SECRET)) {
-              Write-Host "[-] GOOGLE_CLIENT_SECRET : [LOADED] (Masked)" -ForegroundColor Green
+          # Check Client Secret
+          if ([string]::IsNullOrWhiteSpace($env:GOOGLE_CLIENT_SECRET)) {
+              Write-Host "::error::CRITICAL FAILURE: Secret 'GOOGLE_CLIENT_SECRET' is missing or empty!" -ForegroundColor Red
+              $failed = $true
           } else {
-              Write-Host "[-] GOOGLE_CLIENT_SECRET : [MISSING] or Empty" -ForegroundColor Red
+              Write-Host "[-] GOOGLE_CLIENT_SECRET : [OK]" -ForegroundColor Green
           }
-          Write-Host "=========================================="
-      # ----------------------
+
+          # Hard Fail if any secret was missing
+          if ($failed) {
+              Write-Host "One or more required secrets are missing. Stopping pipeline."
+              exit 1
+          }
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
