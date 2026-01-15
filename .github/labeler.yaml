@@ -1,0 +1,17 @@
+# .github/labeler.yml
+
+# Label 'documentation' if any markdown or text file changes
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: ['**/*.md', '**/*.txt', 'docs/**']
+
+# Label 'ci-cd' if github workflow files change
+ci-cd:
+  - changed-files:
+      - any-glob-to-any-file: ['.github/workflows/**', '.github/actions/**']
+
+# Label 'enhancement' generally for UI changes (Optional guess)
+# This is imperfect, but if someone touches QML, it's often an enhancement
+enhancement:
+  - changed-files:
+      - any-glob-to-any-file: ['**/*.qml', 'source/ui/**']
