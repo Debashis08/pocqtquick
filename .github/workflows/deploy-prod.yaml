@@ -223,7 +223,7 @@ jobs:
           gh release create $TAG \
             dist/*.exe \
             --title "$TAG" \
-            --notes "Production deployment initiated manually from **${{ github.ref_name }}**." \
+            --generate-notes \
             --latest
 
   # job 5: create sync pull request to main

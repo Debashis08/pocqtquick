@@ -1,0 +1,28 @@
+changelog:
+  categories:
+    - title: 'New Features'
+      labels:
+        - 'new-feature'
+
+    - title: 'Enhancements'
+      labels:
+        - 'enhancement'
+
+    - title: 'Bug Fixes'
+      labels:
+        - 'bug'
+
+    - title: 'Documentation'
+      labels:
+        - 'documentation'
+
+    - title: 'CI/CD & Infrastructure'
+      labels:
+        - 'ci-cd'
+
+  # Optional: If a PR has one of these labels, exclude it from the notes entirely
+  exclude:
+    labels:
+      - 'duplicate'
+      - 'question'
+      - 'wontfix'
