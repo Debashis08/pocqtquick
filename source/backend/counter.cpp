@@ -34,7 +34,6 @@ QString Counter::clientSecret() const
 #endif
 }
 
-
 // Increments the counter and emits the countChanged signal.
 void Counter::increment()
 {
