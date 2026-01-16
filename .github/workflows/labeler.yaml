@@ -1,9 +1,9 @@
-name: "Pull Request Labeler"
+name: "labeler"
 on:
-  - pull_request_target
+  - pull_request
 
 jobs:
-  triage:
+  assign-labels:
     permissions:
       contents: read
       pull-requests: write
@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/labeler@v5
       with:
-        # Points to the config file we created in Step A
+        # Points to the config file
         configuration-path: .github/labeler.yaml
         # Sync labels helps remove labels if files are reverted/removed from PR
         sync-labels: true

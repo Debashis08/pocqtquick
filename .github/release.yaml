@@ -22,6 +22,9 @@ changelog:
 
   # Optional: If a PR has one of these labels, exclude it from the notes entirely
   exclude:
+    authors:
+        - dependabot
+        - dependabot[bot]
     labels:
       - 'duplicate'
       - 'question'
