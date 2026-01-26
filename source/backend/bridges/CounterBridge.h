@@ -20,5 +20,7 @@ signals:
     void countChanged();
 
 private:
-    CounterService m_service; // Composition: The Bridge owns the Service
+    // Change member type from Object to Pointer
+    // CounterService m_service;  <-- DELETE THIS
+    std::shared_ptr<CounterService> m_service; // <-- USE POINTER
 };
