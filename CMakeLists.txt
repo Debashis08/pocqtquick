@@ -7,12 +7,24 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.4 COMPONENTS Quick Test REQUIRED)
 
+# --- ADD THESE LINES ---
+# QTP0001: Use the modern resource path ":/qt/qml/" by default
+qt_policy(SET QTP0001 NEW)
+
+# QTP0004: Automatically generate qmldir files for subfolders (pages, components)
+qt_policy(SET QTP0004 NEW)
+# -----------------------
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 # Add Source Code
 add_subdirectory(source)
+
+# Update the search path to look in our new "staging" directory
+list(APPEND QML_IMPORT_PATH "${CMAKE_BINARY_DIR}/staging")
+set(QML_IMPORT_PATH "${QML_IMPORT_PATH}" CACHE STRING "Qt Creator QML Path" FORCE)
 
 # Add Tests (Only if testing is enabled)
 # enable_testing()

@@ -16,6 +16,10 @@ qt_add_qml_module(BackendLib
     URI "App.Backend"
     VERSION 1.0
     SOURCES ${BACKEND_SOURCES}
+
+    # --- ADD THIS LINE ---
+    # Redirect build output to a staging folder that matches the URI
+    OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/staging/App/Backend"
 )
 
 # -----------------------------------------------------------------------------
