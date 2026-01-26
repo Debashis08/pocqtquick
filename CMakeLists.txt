@@ -22,9 +22,13 @@ set(CMAKE_AUTORCC ON)
 # Add Source Code
 add_subdirectory(source)
 
-# Update the search path to look in our new "staging" directory
-list(APPEND QML_IMPORT_PATH "${CMAKE_BINARY_DIR}/staging")
-set(QML_IMPORT_PATH "${QML_IMPORT_PATH}" CACHE STRING "Qt Creator QML Path" FORCE)
+# Old way: list(APPEND QML_IMPORT_PATH "${CMAKE_BINARY_DIR}/staging")
+
+# -----------------------------------------------------------------------------
+# FIX: Explicitly add the staging root AND force it into the Cache
+# -----------------------------------------------------------------------------
+set(QML_IMPORT_PATH "${CMAKE_BINARY_DIR}/staging" CACHE STRING "Qt Creator QML Path" FORCE)
+
 
 # Add Tests (Only if testing is enabled)
 # enable_testing()

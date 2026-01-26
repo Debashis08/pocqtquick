@@ -9,6 +9,7 @@ Item {
         id: bridge
     }
 
+
     ColumnLayout {
         anchors.centerIn: parent
         spacing: 20

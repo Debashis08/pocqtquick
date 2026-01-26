@@ -10,7 +10,7 @@ qt_add_qml_module(UiLib
 
     # --- ADD THIS LINE ---
     # Redirect build output to a staging folder that matches the URI
-    OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/staging/App/Ui"
+    # OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/staging/App/Ui"
 
     QML_FILES
         Main.qml
