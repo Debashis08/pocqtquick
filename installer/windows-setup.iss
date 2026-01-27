@@ -31,7 +31,7 @@ OutputDir=Output
 OutputBaseFilename={#MyOutputFilename}
 Compression=lzma
 SolidCompression=yes
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesInstallIn64BitMode=x64compatible
 
 ; UPDATE FLOW SETTINGS
 CloseApplications=yes
