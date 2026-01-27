@@ -7,7 +7,7 @@ on:
 env:
   QT_VERSION: '6.10.1'
   QT_ARCH: 'win64_msvc2022_64'
-  APP_EXECUTABLE: 'counter_app.exe'
+  APP_EXECUTABLE: 'appCounterApp.exe'
   # We don't strictly need PACKAGE_DOMAIN for Inno, but keeping it for consistency
   PACKAGE_DOMAIN: 'com.pocqtquick' 
   QML_SOURCE_DIR: 'source/ui'
