@@ -128,12 +128,13 @@ jobs:
           $ts = "${{ needs.generate-timestamp.outputs.ts }}"
           $installerName = "pocqtquick-dev-installer-$ts"
           
-          # UPDATE THE PATH BELOW TO MATCH YOUR NEW FILENAME
+          # Run the Inno Setup Compiler
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
             "/DMyAppSourceDir=staged-data" `
             "/DMyOutputFilename=$installerName" `
-            installer/windows-setup.iss   <-- CHANGED FROM setup.iss
+            installer/windows-setup.iss
           
+          # Verify the output exists
           if (Test-Path "installer/Output/$installerName.exe") {
              Write-Host "Installer created successfully."
           } else {
