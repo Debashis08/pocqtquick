@@ -128,13 +128,18 @@ jobs:
           $ts = "${{ needs.generate-timestamp.outputs.ts }}"
           $installerName = "pocqtquick-dev-installer-$ts"
           
-          # Run the Inno Setup Compiler
+          # 1. Get the Absolute Path to the staged-data folder
+          # This prevents the "installer/staged-data" path error
+          $absSourceDir = (Resolve-Path "staged-data").Path
+          Write-Host "Inno Source Dir: $absSourceDir"
+
+          # 2. Run Compiler with Absolute Path AND Enforced Exe Name
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
-            "/DMyAppSourceDir=staged-data" `
+            "/DMyAppSourceDir=$absSourceDir" `
+            "/DMyAppExeName=$env:APP_EXECUTABLE" `
             "/DMyOutputFilename=$installerName" `
             installer/windows-setup.iss
           
-          # Verify the output exists
           if (Test-Path "installer/Output/$installerName.exe") {
              Write-Host "Installer created successfully."
           } else {
