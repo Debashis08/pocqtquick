@@ -5,7 +5,7 @@ project(CounterApp VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.4 COMPONENTS Quick Test REQUIRED)
+find_package(Qt6 COMPONENTS Quick Test QuickTest REQUIRED)
 
 # --- ADD THESE LINES ---
 # QTP0001: Use the modern resource path ":/qt/qml/" by default
@@ -33,5 +33,5 @@ set(QML_IMPORT_PATH "${CMAKE_BINARY_DIR}/staging" CACHE STRING "Qt Creator QML P
 
 
 # Add Tests (Only if testing is enabled)
-# enable_testing()
-# add_subdirectory(tests)
+enable_testing()
+add_subdirectory(test)

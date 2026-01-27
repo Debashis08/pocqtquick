@@ -4,9 +4,13 @@ import App.Ui 1.0
 import App.Backend 1.0
 
 Item {
+    id: root
+
+    property alias bridge: internalBridge
+
     // Instantiate the C++ Class
     CounterBridge {
-        id: bridge
+        id: internalBridge
     }
 
 
