@@ -23,7 +23,16 @@ AppId={{A1B2C3D4-E5F6-7890-1234-56789ABCDEF0}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf}\{#MyAppName}
+
+; --- CRITICAL CHANGE FOR LOGGING ---
+; Old: DefaultDirName={autopf}\{#MyAppName}
+; New: Installs to C:\Users\<Name>\AppData\Local\pocqtquick
+DefaultDirName={localappdata}\{#MyAppName}
+
+; Ensure we don't ask for Admin password (since we are installing to user folder)
+PrivilegesRequired=lowest
+; -----------------------------------
+
 DefaultGroupName={#MyAppName}
 
 ; Output configuration
@@ -48,8 +57,6 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "{#MyAppSourceDir}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 
 ; All other files (DLLs, plugins, qml folders) recursively
-; Excludes the exe since it is added above, but Inno handles overlap fine usually. 
-; Using specific source dir passed from CI.
 Source: "{#MyAppSourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]

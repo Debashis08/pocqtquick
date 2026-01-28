@@ -2,6 +2,8 @@
 # Define Source Files
 # -----------------------------------------------------------------------------
 set(BACKEND_SOURCES
+    services/LoggerService.h
+    services/LoggerService.cpp
     services/CounterService.cpp
     services/CounterService.h
     bridges/CounterBridge.cpp

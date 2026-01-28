@@ -10,6 +10,7 @@ add_subdirectory(ui)
 target_link_libraries(appCounterApp
     PRIVATE
     Qt6::Quick
+    Qt6::QuickControls2
     BackendLib
     BackendLibplugin   # <--- CRITICAL: Must be here
     UiLib
