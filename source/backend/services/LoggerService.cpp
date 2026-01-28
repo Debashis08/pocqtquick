@@ -5,47 +5,51 @@
 QFile* LoggerService::m_logFile = nullptr;
 
 void LoggerService::init() {
-    // 1. Determine Log Folder Path
-    // Get the folder containing the .exe (e.g., C:\Program Files\MyApp)
+    // 1. Determine Log Folder Path (Same as before)
     QString appFolderPath = QCoreApplication::applicationDirPath();
-
-    // Construct path directly inside that folder
     QDir logDir(appFolderPath);
-    QString logPath = logDir.absoluteFilePath("logs"); // Result: C:\Program Files\MyApp\logs
+    QString logPath = logDir.absoluteFilePath("logs");
 
-    // -------------------------------------------------------------
-    // CRITICAL WARNING FOR INSTALLERS:
-    // If your user installs this to "C:\Program Files", this WILL FAIL.
-    // Standard users cannot write to Program Files.
-    // -------------------------------------------------------------
-
-    // 2. Create Directory if it doesn't exist
     if (!logDir.exists("logs")) {
         logDir.mkpath("logs");
     }
 
-    // Update logPath to point inside the new folder
-    // (Re-using the variable purely for the file logic below)
     QDir finalLogDir(logPath);
 
-    // ... (Rest of your code: cleanupOldLogs, Create File) ...
-
-    // 3. Cleanup Old Logs (Keep last 10)
+    // 2. Cleanup Old Logs
+    // (This still works perfectly; it will just delete files older than 10 days)
     cleanOldLogs(logPath);
 
-    // 4. Create New Log File
-    QString timestamp = QDateTime::currentDateTime().toString("yyyy-MM-dd_HH-mm-ss");
-    QString fileName = finalLogDir.absoluteFilePath(QString("log_%1.txt").arg(timestamp));
+    // -----------------------------------------------------------
+    // CHANGE 1: Filename Format (Date Only)
+    // -----------------------------------------------------------
+    // Old: yyyy-MM-dd_HH-mm-ss
+    // New: yyyy-MM-dd
+    QString dateString = QDateTime::currentDateTime().toString("yyyy-MM-dd");
+    QString fileName = finalLogDir.absoluteFilePath(QString("log_%1.txt").arg(dateString));
 
     m_logFile = new QFile(fileName);
 
-    // Debugging Tool: Show a Message Box if file creation fails
-    if (m_logFile->open(QIODevice::WriteOnly | QIODevice::Text)) {
+    // -----------------------------------------------------------
+    // CHANGE 2: Open Mode (Append)
+    // -----------------------------------------------------------
+    // QIODevice::Append ensures we don't delete previous logs from today
+    if (m_logFile->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+
+        // -----------------------------------------------------------
+        // CHANGE 3: The "Session Separator"
+        // -----------------------------------------------------------
+        // Since we are appending, we need a visual line to see where this run started.
+        QTextStream out(m_logFile);
+        out << "\n"; // Empty line for breathing room
+        out << "====================================================================\n";
+        out << "   SESSION START: " << QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss") << "\n";
+        out << "====================================================================\n";
+        m_logFile->flush();
+
         qInstallMessageHandler(LoggerService::messageHandler);
     } else {
-        // Since we don't have a console in the installed app,
-        // we should try to alert (or at least we know why it failed).
-        // Common cause: "Access is denied" in C:\Program Files
+        // Handle error...
     }
 }
 

@@ -5,15 +5,14 @@
 
 int main(int argc, char *argv[])
 {
-
-    // 1. Initialize Logger FIRST
-    LoggerService::init();
-    
-    qInfo() << "Application Starting"; // This will now go to your file!
-
     QQuickStyle::setStyle("Basic");
     
     QGuiApplication app(argc, argv);
+
+    // 1. Initialize Logger FIRST
+    LoggerService::init();
+
+    qInfo() << "Application Starting"; // This will now go to your file!
 
     QQmlApplicationEngine engine;
 

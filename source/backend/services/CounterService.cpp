@@ -10,6 +10,7 @@ void CounterService::increment() {
 
 void CounterService::decrement() {
     m_count--;
+    qCritical()<<"Counter decremented. New Value"<<m_count;
 }
 
 int CounterService::value() const {
