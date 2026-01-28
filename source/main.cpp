@@ -5,7 +5,7 @@
 
 int main(int argc, char *argv[])
 {
-    QQuickStyle::setStyle("Basic");
+    // QQuickStyle::setStyle("Material");
     
     QGuiApplication app(argc, argv);
 
