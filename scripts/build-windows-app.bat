@@ -24,7 +24,7 @@ for %%I in ("%SCRIPT_DIR%\..") do set "REPO_ROOT=%%~fI"
 :: Project paths
 set "SOURCE_DIR=%REPO_ROOT%"
 set "QML_DIR=%SOURCE_DIR%\source\ui"
-set "APP_NAME=counter_app.exe"
+set "APP_NAME=appCounterApp.exe"
 
 :: Build & output paths (outside repo root)
 for %%I in ("%REPO_ROOT%\..\pocqtquick-local-build") do set "BUILD_ROOT=%%~fI"

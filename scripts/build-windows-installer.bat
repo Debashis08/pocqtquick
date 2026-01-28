@@ -12,8 +12,9 @@ set "RESET=%ESC%[0m"
 :: configurations
 :: 1. Tools Paths
 set "QT_ENV_SCRIPT=C:\Qt\6.10.1\msvc2022_64\bin\qtenv2.bat"
-set "IFW_BIN=C:\Qt\Tools\QtInstallerFramework\4.10\bin"
 
+:: [CHANGED] Point to Inno Setup Compiler
+set "INNO_COMPILER=C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 
 :: path resolution
 :: Directory of this script: <repo-root>\scripts
@@ -26,10 +27,13 @@ for %%I in ("%SCRIPT_DIR%\..") do set "REPO_ROOT=%%~fI"
 :: Project paths
 set "SOURCE_DIR=%REPO_ROOT%"
 set "QML_DIR=%SOURCE_DIR%\source\ui"
-set "CONFIG_XML=%SOURCE_DIR%\installer\config\config.xml"
-set "PACKAGES_DIR=%SOURCE_DIR%\installer\packages"
-set "APP_NAME=counter_app.exe"
-set "INSTALLER_NAME=pocqtquick-installer-Windows-x64.exe"
+set "APP_NAME=appCounterApp.exe"
+
+:: [CHANGED] Inno Setup output filename (No .exe extension here, Inno adds it)
+set "INSTALLER_BASENAME=pocqtquick-installer-Windows-x64"
+
+:: [CHANGED] Path to your new .iss file
+set "ISS_SCRIPT=%SOURCE_DIR%\installer\windows-setup.iss"
 
 :: Build & output paths (outside repo root)
 for %%I in ("%REPO_ROOT%\..\pocqtquick-local-build") do set "BUILD_ROOT=%%~fI"
@@ -42,13 +46,11 @@ echo.
 echo %BLUE% Dynamic Paths Detected%RESET%
 echo %BLUE% Source:         %SOURCE_DIR%%RESET%
 echo %BLUE% QML Dir:        %QML_DIR%%RESET%
-echo %BLUE% Config XML:     %CONFIG_XML%%RESET%
-echo %BLUE% Packages:       %PACKAGES_DIR%%RESET%
+echo %BLUE% ISS Script:     %ISS_SCRIPT%%RESET%
 echo %BLUE% App Name:       %APP_NAME%%RESET%
-echo %BLUE% Installer:      %INSTALLER_NAME%%RESET%
 echo %BLUE% Build Dir:      %BUILD_DIR%%RESET%
+echo %BLUE% Staging Dir:    %LOCAL_APP_DIR%%RESET%
 echo %BLUE% Installer Dir:  %INSTALLER_DIR%%RESET%
-echo %BLUE% Local App Dir:  %LOCAL_APP_DIR%%RESET%
 
 :: execution steps
 echo.
@@ -72,6 +74,7 @@ call "%QT_ENV_SCRIPT%"
 echo.
 echo %BLUE%Step 2: Setting up MSVC Compiler (vcvars64)%RESET%
 
+:: NOTE: Keeping your specific VS path logic
 set "VCVARS_PATH="
 if exist "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat" (
     set "VCVARS_PATH=C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat"
@@ -132,15 +135,30 @@ echo %BLUE%Step 6: Running Windeployqt (Dependency Injection)%RESET%
 echo %BLUE%Target:  %LOCAL_APP_DIR%\%APP_NAME%%RESET%
 echo %BLUE%QML Dir: %QML_DIR%%RESET%
 
-windeployqt --release --qmldir "%QML_DIR%" "%LOCAL_APP_DIR%\%APP_NAME%"
+windeployqt --release --compiler-runtime --no-translations --no-opengl-sw --qmldir "%QML_DIR%" "%LOCAL_APP_DIR%\%APP_NAME%"
+
+:: Cleanup unnecessary files (matches your YAML logic)
+del "%LOCAL_APP_DIR%\*.obj" "%LOCAL_APP_DIR%\*.cpp" "%LOCAL_APP_DIR%\*.h" "%LOCAL_APP_DIR%\*.cmake" 2>nul
 
 echo.
-echo %BLUE%Step 7: Generating Installer (binarycreator)%RESET%
+echo %BLUE%Step 7: Generating Installer (Inno Setup)%RESET%
 
-:: Create the output directory if it doesn't exist
+:: [FIX] Use !INNO_COMPILER! (with exclamation marks) to safely handle (x86) parentheses
+if not exist "!INNO_COMPILER!" (
+    echo %RED%[ERROR] Inno Setup Compiler not found at: !INNO_COMPILER!%RESET%
+    echo %RED%Please install Inno Setup or fix the path.%RESET%
+    pause
+    exit /b 1
+)
+
+:: Ensure output directory exists
 if not exist "%INSTALLER_DIR%" mkdir "%INSTALLER_DIR%"
 
-"%IFW_BIN%\binarycreator.exe" -c "%CONFIG_XML%" -p "%PACKAGES_DIR%" "%INSTALLER_DIR%\%INSTALLER_NAME%"
+:: Run ISCC
+:: /O -> Output Path
+:: /F -> Output Filename (no extension)
+:: /D -> Define constants (SourceDir, ExeName)
+"!INNO_COMPILER!" "/O%INSTALLER_DIR%" "/F%INSTALLER_BASENAME%" "/DMyAppSourceDir=%LOCAL_APP_DIR%" "/DMyAppExeName=%APP_NAME%" "/DMyOutputFilename=%INSTALLER_BASENAME%" "%ISS_SCRIPT%"
 
 if %errorlevel% neq 0 (
     echo %RED%[ERROR] Installer generation failed.%RESET%
@@ -151,7 +169,7 @@ if %errorlevel% neq 0 (
 echo.
 echo %GREEN%[SUCCESS] Build Complete.%RESET%
 echo %GREEN%Installer created at:%RESET%
-echo %GREEN%%INSTALLER_DIR%\%INSTALLER_NAME%%RESET%
+echo %GREEN%%INSTALLER_DIR%\%INSTALLER_BASENAME%.exe%RESET%
 echo.
 
 pause
