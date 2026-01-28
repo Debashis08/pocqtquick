@@ -1,11 +1,13 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
-#include <QQuickStyle>
+//#include <QQuickStyle>
 #include "backend/services/LoggerService.h"
 
 int main(int argc, char *argv[])
 {
     // QQuickStyle::setStyle("Material");
+    
+    qputenv("QT_QUICK_CONTROLS_CONF", ":/pocqtquick-qtquickcontrols2.conf");
     
     QGuiApplication app(argc, argv);
 

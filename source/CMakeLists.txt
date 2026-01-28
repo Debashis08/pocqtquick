@@ -6,7 +6,7 @@ qt_add_executable(appCounterApp
 # This embeds the file at the root path ":/" which is where Qt looks for it.
 qt_add_resources(appCounterApp "configuration"
     PREFIX "/"
-    FILES "qtquickcontrols2.conf"
+    FILES "pocqtquick-qtquickcontrols2.conf"
 )
 
 set_target_properties(appCounterApp PROPERTIES WIN32_EXECUTABLE ON)
