@@ -5,7 +5,7 @@ project(CounterApp VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 COMPONENTS Quick Test QuickTest REQUIRED)
+find_package(Qt6 COMPONENTS Quick Test QuickTest QuickControls2 REQUIRED)
 
 # --- ADD THESE LINES ---
 # QTP0001: Use the modern resource path ":/qt/qml/" by default

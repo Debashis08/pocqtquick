@@ -1,9 +1,20 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+//#include <QQuickStyle>
+#include "backend/services/LoggerService.h"
 
 int main(int argc, char *argv[])
 {
+    // QQuickStyle::setStyle("Material");
+    
+    qputenv("QT_QUICK_CONTROLS_CONF", ":/pocqtquick-qtquickcontrols2.conf");
+    
     QGuiApplication app(argc, argv);
+
+    // 1. Initialize Logger FIRST
+    LoggerService::init();
+
+    qInfo() << "Application Starting"; // This will now go to your file!
 
     QQmlApplicationEngine engine;
 
