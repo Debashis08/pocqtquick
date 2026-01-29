@@ -1,16 +1,14 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls // Required for Button and Label
+import QtQuick.Controls
 import App.Ui 1.0
 import App.Backend 1.0
 
 Item {
     id: root
 
-    // 'bridge' is now a public name for the private object 'internalBridge'
     property alias bridge: internalBridge
 
-    // Instantiate the C++ Class
     CounterBridge {
         id: internalBridge
     }
@@ -20,7 +18,6 @@ Item {
         spacing: 20
 
         Text {
-            // Using the alias 'bridge' to access the 'count' property
             text: "Count: " + bridge.count
             font.pixelSize: 32
             Layout.alignment: Qt.AlignHCenter
@@ -28,6 +25,8 @@ Item {
 
         RowLayout {
             spacing: 20
+            // --- FIX: This aligns the entire row of buttons to the center ---
+            Layout.alignment: Qt.AlignHCenter
 
             StandardButton {
                 text: "-"
@@ -42,9 +41,7 @@ Item {
             }
         }
 
-        // --- NEW: Secrets Demonstration Section ---
-
-        // A visual divider
+        // --- Secrets Demonstration Section ---
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredWidth: 200
@@ -61,7 +58,6 @@ Item {
             color: "grey"
         }
 
-        // FIX 1: Changed 'counter.clientId' to 'bridge.clientId'
         Label {
             text: "Client ID: " + (bridge.clientId ? bridge.clientId : "Not Found")
             Layout.alignment: Qt.AlignHCenter
@@ -69,17 +65,12 @@ Item {
             color: "#555"
         }
 
-        // Button to verify the Secret
         Button {
             text: "Log Secret to Console"
             Layout.alignment: Qt.AlignHCenter
-            // Material.background only works if you are using Material style,
-            // otherwise use 'palette.button' or custom background
-
             onClicked: {
                 console.log("--------------------------------")
                 console.log("Fetching secrets from C++ backend:")
-                // FIX 2: Changed 'counter' to 'bridge' here as well
                 console.log("Client ID:      " + bridge.clientId)
                 console.log("Client Secret: " + bridge.clientSecret)
                 console.log("--------------------------------")
