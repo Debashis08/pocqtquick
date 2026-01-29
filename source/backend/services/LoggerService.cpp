@@ -42,9 +42,9 @@ void LoggerService::init() {
         // Since we are appending, we need a visual line to see where this run started.
         QTextStream out(m_logFile);
         // out << "\n"; // Empty line for breathing room
-        out << "====================================================================\n";
+        out << "--------------------------------------------------------------------\n";
         out << "   session start: " << QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss") << "\n";
-        out << "====================================================================\n";
+        out << "--------------------------------------------------------------------\n";
         m_logFile->flush();
 
         qInstallMessageHandler(LoggerService::messageHandler);
