@@ -41,9 +41,9 @@ void LoggerService::init() {
         // -----------------------------------------------------------
         // Since we are appending, we need a visual line to see where this run started.
         QTextStream out(m_logFile);
-        out << "\n"; // Empty line for breathing room
+        // out << "\n"; // Empty line for breathing room
         out << "====================================================================\n";
-        out << "   SESSION START: " << QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss") << "\n";
+        out << "   session start: " << QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss") << "\n";
         out << "====================================================================\n";
         m_logFile->flush();
 
@@ -75,6 +75,18 @@ void LoggerService::cleanOldLogs(const QString &logFolderPath) {
 void LoggerService::messageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
     // 1. Check if file is open
     if (!m_logFile) return;
+
+    // ---------------------------------------------------------
+    // UPDATE: Filter out Debug messages in Release Mode
+    // ---------------------------------------------------------
+#ifdef QT_NO_DEBUG
+    // If this is a RELEASE build, and the message is a Debug log,
+    // ignore it immediately. This keeps log files clean and small.
+    if (type == QtDebugMsg) {
+        return;
+    }
+#endif
+    // ---------------------------------------------------------
 
     // 2. Determine Log Level
     QString levelText;
