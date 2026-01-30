@@ -20,3 +20,15 @@ void CounterBridge::decrement() {
     m_service->decrement();
     emit countChanged();
 }
+
+QString CounterBridge::clientId() const {
+    // Option A: Return macro defined by CMake
+    // return CLIENT_ID;
+
+    // Option B: Get from your service
+    return QString::fromStdString(m_service->getClientId());
+}
+
+QString CounterBridge::clientSecret() const {
+    return QString::fromStdString(m_service->getClientSecret());
+}
