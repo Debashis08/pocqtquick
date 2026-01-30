@@ -1,41 +1,33 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
-#include <QQmlContext>
-#include "backend/counter.h"
+//#include <QQuickStyle>
+#include "backend/services/LoggerService.h"
 
 int main(int argc, char *argv[])
 {
-    using namespace Qt::StringLiterals;
-
-    // Create the main application instance.
+    // QQuickStyle::setStyle("Material");
+    
+    qputenv("QT_QUICK_CONTROLS_CONF", ":/pocqtquick-qtquickcontrols2.conf");
+    
     QGuiApplication app(argc, argv);
 
-    // The QML engine that will load and run our QML code.
+    // 1. Initialize Logger FIRST
+    LoggerService::init();
+
+    qInfo() << "Application Starting"; // This will now go to your file!
+
     QQmlApplicationEngine engine;
 
-    // Create an instance of our C++ Counter backend.
-    Counter myCounter;
+    // --- FIX IS HERE ---
+    // Manually add the resource root to the import path.
+    // This allows "App.Ui" to find its sibling "App.Backend".
+    engine.addImportPath(":/qt/qml");
+    // -------------------
 
-    // Expose the C++ object to QML.
-    // The root context's setContextProperty method makes 'myCounter' available
-    // to all QML components loaded by the engine under the name "counter".
-    engine.rootContext()->setContextProperty("counter", &myCounter);
+    engine.loadFromModule("App.Ui", "Main");
 
-    // Define the URL for the main QML file.
-    // "qrc:" refers to the Qt Resource System, which we defined in qml.qrc.
-    const QUrl url(u"qrc:/ui/Main.qml"_s);
+    if (engine.rootObjects().isEmpty())
+        return -1;
 
-    // If the QML object is destroyed, quit the application.
-    QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
-                     &app, [url](QObject *obj, const QUrl &objUrl) {
-                         if (!obj && url == objUrl)
-                             QCoreApplication::exit(-1);
-                     }, Qt::QueuedConnection);
-
-    // Load the main QML file.
-    engine.load(url);
-
-    // Start the application's event loop.
     return app.exec();
 }
-

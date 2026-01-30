@@ -7,8 +7,9 @@ on:
 env:
   QT_VERSION: '6.10.1'
   QT_ARCH: 'win64_msvc2022_64'
-  APP_EXECUTABLE: 'counter_app.exe'
-  PACKAGE_DOMAIN: 'com.pocqtquick'
+  APP_EXECUTABLE: 'appCounterApp.exe'
+  # We don't strictly need PACKAGE_DOMAIN for Inno, but keeping it for consistency
+  PACKAGE_DOMAIN: 'com.pocqtquick' 
   QML_SOURCE_DIR: 'source/ui'
 
 jobs:
@@ -64,7 +65,8 @@ jobs:
 
       - name: Run Windeployqt
         run: |
-          $targetDir = "installer\packages\$env:PACKAGE_DOMAIN\data"
+          # Simplified: Create a clean "dist" directory for the staged app
+          $targetDir = "dist"
           New-Item -ItemType Directory -Force -Path $targetDir
 
           $exePath = Get-ChildItem -Path "download_temp" -Filter $env:APP_EXECUTABLE -Recurse | Select-Object -First 1 -ExpandProperty FullName
@@ -82,10 +84,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: staged-package
-          path: installer/packages/${{ env.PACKAGE_DOMAIN }}/data
+          # Upload the clean dist folder
+          path: dist
           retention-days: 1
 
-  # job 4: create application zip
+  # job 4: create application zip (Raw binaries, no installer)
   create-application-zip:
     needs: [deploy-app-windows, generate-timestamp]
     runs-on: windows-2022
@@ -99,12 +102,11 @@ jobs:
       - name: Upload Application Zip
         uses: actions/upload-artifact@v4
         with:
-          # The name of the zip file the user downloads
           name: pocqtquick-test-app-${{ needs.generate-timestamp.outputs.ts }}
           path: staged-data
           retention-days: 5
 
-  # job 5: create installer zip
+  # job 5: create installer zip (Inno Setup)
   create-installer-zip:
     needs: [deploy-app-windows, generate-timestamp]
     runs-on: windows-2022
@@ -114,35 +116,45 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Qt (IFW)
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: ${{ env.QT_VERSION }}
-          arch: ${{ env.QT_ARCH }}
-          aqtversion: '>=3.1.6'
-          tools: 'tools_ifw'
+      # 1. Install Inno Setup via Chocolatey
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress
 
+      # 2. Download the binaries we prepared in Job 3
       - name: Download Staged Package
         uses: actions/download-artifact@v4
         with:
           name: staged-package
-          path: installer/packages/${{ env.PACKAGE_DOMAIN }}/data
+          path: staged-data
 
+      # 3. Run the Inno Setup Compiler (ISCC)
       - name: Build Installer
         run: |
           $ts = "${{ needs.generate-timestamp.outputs.ts }}"
-          $installerName = "pocqtquick-test-installer-$ts.exe"
+          $installerName = "pocqtquick-dev-installer-$ts"
           
-          $binCreator = Get-ChildItem -Path "..\Qt\Tools\QtInstallerFramework\*\bin\binarycreator.exe" | Select-Object -First 1 -ExpandProperty FullName
-          
-          cd installer
-          & $binCreator -c config\config.xml -p packages\ $installerName
-          
-          echo "INSTALLER_FILENAME=$installerName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          # 1. Get the Absolute Path to the staged-data folder
+          # This prevents the "installer/staged-data" path error
+          $absSourceDir = (Resolve-Path "staged-data").Path
+          Write-Host "Inno Source Dir: $absSourceDir"
 
-      - name: Upload Installer Zip
+          # 2. Run Compiler with Absolute Path AND Enforced Exe Name
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
+            "/DMyAppSourceDir=$absSourceDir" `
+            "/DMyAppExeName=$env:APP_EXECUTABLE" `
+            "/DMyOutputFilename=$installerName" `
+            installer/windows-setup.iss
+          
+          if (Test-Path "installer/Output/$installerName.exe") {
+             Write-Host "Installer created successfully."
+          } else {
+             Write-Error "Installer generation failed."
+             exit 1
+          }
+
+      - name: Upload Installer Exe
         uses: actions/upload-artifact@v4
         with:
           name: pocqtquick-test-installer-${{ needs.generate-timestamp.outputs.ts }}
-          path: installer/${{ env.INSTALLER_FILENAME }}
+          path: installer/Output/*.exe
           retention-days: 5
