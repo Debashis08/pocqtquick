@@ -7,9 +7,9 @@ target_include_directories(tst_CounterService PRIVATE ${CMAKE_SOURCE_DIR}/source
 add_test(NAME CounterServiceTest COMMAND tst_CounterService)
 
 # --- Test 2: Counter Bridge (QML Integration) ---
-add_executable(tst_CounterBridge
-    bridges/tst_CounterBridge.cpp
+add_executable(tst_CounterViewModel
+    viewmodels/tst_CounterViewModel.cpp
 )
-target_link_libraries(tst_CounterBridge PRIVATE Qt6::Test Qt6::Quick BackendLib BackendLibplugin)
-target_include_directories(tst_CounterBridge PRIVATE ${CMAKE_SOURCE_DIR}/source/backend)
-add_test(NAME CounterBridgeTest COMMAND tst_CounterBridge)
+target_link_libraries(tst_CounterViewModel PRIVATE Qt6::Test Qt6::Quick BackendLib BackendLibplugin)
+target_include_directories(tst_CounterViewModel PRIVATE ${CMAKE_SOURCE_DIR}/source/backend)
+add_test(NAME CounterViewModelTest COMMAND tst_CounterViewModel)
