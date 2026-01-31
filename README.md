@@ -9,7 +9,7 @@
 * `installer/` - Resources and scripts for creating the application installer.
 * `scripts/` - Helper scripts for build automation and setup.
 * `src/` - Core application src code (C++ and QML).
-* `test/` - Unit tests for validating application logic.
+* `tests/` - Unit tests for validating application logic.
 * `CMakeLists.txt` - Main CMake configuration file.
 
 ### Project Structure
@@ -44,7 +44,7 @@ root
 │   │  └──counter.h
 │   └───ui
 │       └──Main.qml
-├──test
+├──tests
 │   ├──CMakeLists.txt
 │   ├──backend
 │   │  └──counterTest.cpp
