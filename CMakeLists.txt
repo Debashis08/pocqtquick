@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.16)
 
 project(CounterApp VERSION 0.1 LANGUAGES CXX)
 
+# Tell CMake to look for .cmake files in the "cmake" folder
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -22,7 +25,7 @@ set(CMAKE_AUTORCC ON)
 set(QT_QML_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/qml")
 
 # Add Source Code
-add_subdirectory(source)
+add_subdirectory(src)
 
 # Old way: list(APPEND QML_IMPORT_PATH "${CMAKE_BINARY_DIR}/staging")
 
@@ -34,4 +37,4 @@ set(QML_IMPORT_PATH "${CMAKE_BINARY_DIR}/staging" CACHE STRING "Qt Creator QML P
 
 # Add Tests (Only if testing is enabled)
 enable_testing()
-add_subdirectory(test)
+add_subdirectory(tests)

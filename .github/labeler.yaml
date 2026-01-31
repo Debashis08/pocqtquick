@@ -14,4 +14,4 @@ documentation:
 # This is imperfect, but if someone touches QML, it's often an enhancement
 enhancement:
   - changed-files:
-      - any-glob-to-any-file: ['**/*.qml', 'source/ui/**']
+      - any-glob-to-any-file: ['**/*.qml', 'src/ui/**']

@@ -18,7 +18,7 @@ env:
   QT_ARCH: 'win64_msvc2022_64'
   APP_EXECUTABLE: 'appCounterApp.exe'
   PACKAGE_DOMAIN: 'com.pocqtquick' 
-  QML_SOURCE_DIR: 'source/ui'
+  QML_SOURCE_DIR: 'src/ui'
 
 jobs:
   # job 1: production deployment validation & versioning

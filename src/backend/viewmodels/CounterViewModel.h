@@ -3,7 +3,7 @@
 #include <QtQml/qqmlregistration.h>
 #include "services/CounterService.h"
 
-class CounterBridge : public QObject {
+class CounterViewModel : public QObject {
     Q_OBJECT
     QML_ELEMENT
     // Existing property
@@ -15,7 +15,7 @@ class CounterBridge : public QObject {
     Q_PROPERTY(QString clientSecret READ clientSecret CONSTANT)
 
 public:
-    explicit CounterBridge(QObject *parent = nullptr);
+    explicit CounterViewModel(QObject *parent = nullptr);
 
     int count() const;
 
