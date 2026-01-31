@@ -1,15 +1,6 @@
-# --- Test 1: Counter Service (Pure Logic) ---
-add_executable(tst_CounterService
-    services/tst_CounterService.cpp
-)
-target_link_libraries(tst_CounterService PRIVATE Qt6::Test BackendLib BackendLibplugin)
-target_include_directories(tst_CounterService PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
-add_test(NAME CounterServiceTest COMMAND tst_CounterService)
+# Load the helper file (CMake finds it because of Step 3)
+include(TestUtils)
 
-# --- Test 2: Counter Bridge (QML Integration) ---
-add_executable(tst_CounterViewModel
-    viewmodels/tst_CounterViewModel.cpp
-)
-target_link_libraries(tst_CounterViewModel PRIVATE Qt6::Test Qt6::Quick BackendLib BackendLibplugin)
-target_include_directories(tst_CounterViewModel PRIVATE ${CMAKE_SOURCE_DIR}/src/backend)
-add_test(NAME CounterViewModelTest COMMAND tst_CounterViewModel)
+# Now just list your tests!
+add_backend_test(tst_CounterService services/tst_CounterService.cpp)
+add_backend_test(tst_CounterViewModel viewmodels/tst_CounterViewModel.cpp)
