@@ -22,7 +22,7 @@ set(CMAKE_AUTORCC ON)
 set(QT_QML_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/qml")
 
 # Add Source Code
-add_subdirectory(source)
+add_subdirectory(src)
 
 # Old way: list(APPEND QML_IMPORT_PATH "${CMAKE_BINARY_DIR}/staging")
 

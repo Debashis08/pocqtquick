@@ -8,7 +8,7 @@
 **Key Features:**
 * `installer/` - Resources and scripts for creating the application installer.
 * `scripts/` - Helper scripts for build automation and setup.
-* `source/` - Core application source code (C++ and QML).
+* `src/` - Core application src code (C++ and QML).
 * `test/` - Unit tests for validating application logic.
 * `CMakeLists.txt` - Main CMake configuration file.
 
@@ -35,7 +35,7 @@ root
 ├──scripts
 │  ├──build-windows-app.bat
 │  └──build-windows-installer.bat
-├──source
+├──src
 │   ├──CMakeLists.txt
 │   ├──main.cpp
 │   ├──qml.qrc

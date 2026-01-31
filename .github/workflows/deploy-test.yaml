@@ -10,7 +10,7 @@ env:
   APP_EXECUTABLE: 'appCounterApp.exe'
   # We don't strictly need PACKAGE_DOMAIN for Inno, but keeping it for consistency
   PACKAGE_DOMAIN: 'com.pocqtquick' 
-  QML_SOURCE_DIR: 'source/ui'
+  QML_SOURCE_DIR: 'src/ui'
 
 jobs:
   # job 1: validation and build
