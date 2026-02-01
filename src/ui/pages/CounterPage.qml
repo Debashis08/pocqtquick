@@ -7,10 +7,10 @@ import App.Backend 1.0
 Item {
     id: root
 
-    property alias bridge: internalBridge
+    property alias bridge: internalViewModel
 
-    CounterBridge {
-        id: internalBridge
+    CounterViewModel {
+        id: internalViewModel
     }
 
     ColumnLayout {
