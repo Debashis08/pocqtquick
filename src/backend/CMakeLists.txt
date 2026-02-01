@@ -18,8 +18,8 @@ endif()
 # Define Source Files
 # -----------------------------------------------------------------------------
 set(BACKEND_SOURCES
-    services/LoggerService.h
-    services/LoggerService.cpp
+    core/LoggerService.h
+    core/LoggerService.cpp
     services/CounterService.cpp
     services/CounterService.h
     viewmodels/CounterViewModel.cpp
@@ -54,8 +54,9 @@ target_compile_definitions(BackendLib PRIVATE
 # -----------------------------------------------------------------------------
 target_include_directories(BackendLib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}           # Allows #include "viewmodels/CounterViewModel.h"
-    ${CMAKE_CURRENT_SOURCE_DIR}/viewmodels   # Allows #include "CounterViewModel.h"
+    ${CMAKE_CURRENT_SOURCE_DIR}/core
     ${CMAKE_CURRENT_SOURCE_DIR}/services  # Allows #include "CounterService.h"
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewmodels   # Allows #include "CounterViewModel.h"
 )
 
 # -----------------------------------------------------------------------------
