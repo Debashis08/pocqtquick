@@ -1,7 +1,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 //#include <QQuickStyle>
-#include "backend/services/LoggerService.h"
+#include "backend/core/LoggerService.h"
 
 int main(int argc, char *argv[])
 {

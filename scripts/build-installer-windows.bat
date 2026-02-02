@@ -26,7 +26,7 @@ for %%I in ("%SCRIPT_DIR%\..") do set "REPO_ROOT=%%~fI"
 
 :: Project paths
 set "SOURCE_DIR=%REPO_ROOT%"
-set "QML_DIR=%SOURCE_DIR%\source\ui"
+set "QML_DIR=%SOURCE_DIR%\src\ui"
 set "APP_NAME=appCounterApp.exe"
 
 :: [CHANGED] Inno Setup output filename (No .exe extension here, Inno adds it)
@@ -118,16 +118,16 @@ echo %BLUE%Step 5: Creating Runnable App Folder%RESET%
 
 if not exist "%LOCAL_APP_DIR%" mkdir "%LOCAL_APP_DIR%"
 
-:: fix: Added "\source\" because CMake places the binary there
-if not exist "%BUILD_DIR%\source\%APP_NAME%" (
+:: fix: Added "\src\" because CMake places the binary there
+if not exist "%BUILD_DIR%\src\%APP_NAME%" (
     echo %RED%[ERROR] File not found:%RESET%
-    echo %RED%        %BUILD_DIR%\source\%APP_NAME%%RESET%
+    echo %RED%        %BUILD_DIR%\src\%APP_NAME%%RESET%
     echo %RED%Please verify the output directory or target name.%RESET%
     pause
     exit /b 1
 )
 
-copy /Y "%BUILD_DIR%\source\%APP_NAME%" "%LOCAL_APP_DIR%\%APP_NAME%"
+copy /Y "%BUILD_DIR%\src\%APP_NAME%" "%LOCAL_APP_DIR%\%APP_NAME%"
 
 echo.
 echo %BLUE%Step 6: Running Windeployqt (Dependency Injection)%RESET%
