@@ -1,62 +1,46 @@
 # pocqtquick
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Qt](https://img.shields.io/badge/Qt-6.10-green.svg)](https://www.qt.io/)
 
 ### Project Overview
 **pocqtquick** is a Proof of Concept (PoC) application demonstrating the integration of **Qt Quick (QML)** with a **C++** backend. This can be considered as a template repository for desktop application development. The project includes basic `dev`, `test`, `production` deployment yamls with a proper branch protection strategy and  deployment policies, to ensure smooth deployment and validation across each environment.
 
-**Key Features:**
-* `installer/` - Resources and scripts for creating the application installer.
-* `scripts/` - Helper scripts for build automation and setup.
-* `src/` - Core application src code (C++ and QML).
-* `tests/` - Unit tests for validating application logic.
-* `CMakeLists.txt` - Main CMake configuration file.
+### Architecture
+The project follows a **Layered Architecture** to ensure modularity:
+
+* **UI Layer (`src/ui`)**: Pure QML. No business logic.
+* **ViewModel Layer (`src/backend/viewmodels`)**: Adapters that expose C++ data to QML.
+* **Service Layer (`src/backend/services`)**: Pure C++ business logic (File I/O, Networking).
+* **Core Layer (`src/backend/core`)**: Infrastructure (Logging, Service Locator).
 
 ### Project Structure
-```
-root
-├──.github
-│   ├──pull_request_template.md
-│   ├──ISSUE_TEMPLATE
-│   │  └──bug_report.md
-│   └──workflows
-│      ├──deploy-dev.yaml
-│      ├──deploy-prod.yaml
-│      ├──deploy-test.yaml
-│      └──validate.yaml
-├──installer
-│   ├──config
-│   │  └──config.xml
-│   └──packages
-│       └──com.pocqtquick
-│           └──meta
-│               ├──installscript.qs
-│               └──package.xml
-├──scripts
-│  ├──build-windows-app.bat
-│  └──build-windows-installer.bat
-├──src
-│   ├──CMakeLists.txt
-│   ├──main.cpp
-│   ├──qml.qrc
-│   ├──backend
-│   │  ├──counter.cpp
-│   │  └──counter.h
-│   └───ui
-│       └──Main.qml
-├──tests
-│   ├──CMakeLists.txt
-│   ├──backend
-│   │  └──counterTest.cpp
-│   └──ui
-│      └──MainQmlTest.cpp
-├──.gitignore
-├──CMakeLists.txt
-├──CODE_OF_CONDUCT.md
-├──CONTRIBUTING.md
-├──LICENSE
-├──README.md
-└──SECURITY.md
+```text
+pocqtquick
+├── .github
+│   ├── workflows                   # CI/CD (Build, Test, Deploy)
+│   └── pull_request_template.md
+├── cmake
+│   └── TestUtils.cmake             # Shared CMake functions for testing
+├── installer
+│   └── windows-setup.iss           # Inno Setup script for generating .exe installer
+├── scripts
+│   ├── build-app-windows.bat       # Automates the build process
+│   └── build-installer-windows.bat # Automates installer generation
+├── src
+│   ├── CMakeLists.txt
+│   ├── main.cpp                    # Entry point
+│   ├── qtquickcontrols2.conf       # Global UI styling configuration
+│   ├── backend
+│   │   ├── core                    # Infrastructure (Logger, Locator)
+│   │   ├── services                # Business Logic (CounterService)
+│   │   └── viewmodels              # QML Adapters (CounterViewModel)
+│   └── ui
+│       ├── components              # Reusable UI elements (Buttons)
+│       └── pages                   # Full-screen views
+└── tests
+    ├── backend                     # C++ Unit Tests (QTest)
+    └── ui                          # QML Integration Tests (QQuickTest)
 ```
 
 ### Prerequisites
