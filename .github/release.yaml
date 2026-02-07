@@ -1,31 +1,39 @@
-changelog:
-  categories:
-    - title: 'New Features'
-      labels:
-        - 'new-feature'
+template: |
+  ### Changes and updates in release v$RESOLVED_VERSION
+  $CHANGES
+  
+  **Full Changelog:** https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
 
-    - title: 'Enhancements'
-      labels:
-        - 'enhancement'
-
-    - title: 'Bug Fixes'
-      labels:
-        - 'bug'
-
-    - title: 'Documentation'
-      labels:
-        - 'documentation'
-
-    - title: 'CI/CD & Infrastructure'
-      labels:
-        - 'ci-cd'
-
-  # Optional: If a PR has one of these labels, exclude it from the notes entirely
-  exclude:
-    authors:
-        - dependabot
-        - dependabot[bot]
+categories:
+  - title: 'UI & User Experience'
     labels:
-      - 'duplicate'
-      - 'question'
-      - 'wontfix'
+      - 'ui'
+
+  - title: 'Logic & Backend'
+    labels:
+      - 'backend'
+
+  - title: 'Core System Updates'
+    labels:
+      - 'core'
+
+  - title: 'Installer & Deployment'
+    labels:
+      - 'installer'
+
+  - title: 'Build System'
+    labels:
+      - 'build-system'
+    # Hide build changes if they are part of a feature PR
+    exclude-labels:
+      - 'ui'
+      - 'backend'
+      - 'core'
+
+exclude-labels:
+  - 'skip-changelog'
+
+# Convert "## Title" to "**Title**"
+replacers:
+  - search: '/^## (.*)$/gm'
+    replace: '**$1**'
