@@ -1,17 +1,40 @@
-# .github/labeler.yml
-
-# Label 'ci-cd' if github workflow files change
-ci-cd:
+# FRONTEND (QML)
+ui:
   - changed-files:
-      - any-glob-to-any-file: ['.github/workflows/**', '.github/actions/**']
+      - any-glob-to-any-file: 'src/ui/**'
+      - any-glob-to-any-file: 'tests/ui/**'
+      - any-glob-to-any-file: '*.qrc'
+      - any-glob-to-any-file: '*.conf'
 
-# Label 'documentation' if any markdown or text file changes
+# BACKEND (C++)
+# Business Logic (Services) and Glue Code (ViewModels)
+backend:
+  - changed-files:
+      - any-glob-to-any-file: 'src/backend/**'
+      - any-glob-to-any-file: 'tests/backend/**'
+
+# Core Infrastructure (Logging, Service Locator)
+core:
+  - changed-files:
+      - any-glob-to-any-file: 'src/backend/core/**'
+
+# DEPLOYMENT & BUILD
+installer:
+  - changed-files:
+      - any-glob-to-any-file: 'installer/**'
+
+build-system:
+  - changed-files:
+      - any-glob-to-any-file: 'cmake/**'
+      - any-glob-to-any-file: 'scripts/**'
+      - any-glob-to-any-file: '**/CMakeLists.txt'
+
+# Tooling: Github workflows
+workflows:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**'
+
+# Documentation: Root level MD files
 documentation:
   - changed-files:
-      - any-glob-to-any-file: ['**/*.md', '**/*.txt', 'docs/**']
-
-# Label 'enhancement' generally for UI changes (Optional guess)
-# This is imperfect, but if someone touches QML, it's often an enhancement
-enhancement:
-  - changed-files:
-      - any-glob-to-any-file: ['**/*.qml', 'src/ui/**']
+      - any-glob-to-any-file: '*.md'

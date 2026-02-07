@@ -201,6 +201,7 @@ jobs:
     environment: production
     permissions:
       contents: write
+      pull-requests: read # REQUIRED: Allows release-drafter to read PR labels
     steps:
       - uses: actions/checkout@v4
       
@@ -210,17 +211,27 @@ jobs:
           name: installer-package
           path: dist-release
 
-      - name: Publish GitHub Release
+      # 1. Create the Release with Auto-Generated Notes
+      - name: Create Release
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release.yaml # Ensures it uses your custom config
+          tag: ${{ needs.prod-deployment-validation.outputs.new_tag }}
+          name: "${{ needs.prod-deployment-validation.outputs.new_tag }}"
+          version: ${{ needs.prod-deployment-validation.outputs.new_tag }}
+          publish: true
+
+      # 2. Upload the Installer Exe to the new Release
+      - name: Upload Installer to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.prod-deployment-validation.outputs.new_tag }}
         run: |
-          # Uploads the .exe file found in dist-release
-          gh release create $TAG \
-            dist-release/*.exe \
-            --title "$TAG" \
-            --generate-notes \
-            --latest
+          # Uploads all .exe files found in dist-release
+          gh release upload $TAG dist-release/*.exe --clobber
 
   # job 5: create sync pull request to main
   create-sync-pull-request:
@@ -232,7 +243,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create Sync PR
+      - name: Create Sync pull request to main
         if: startsWith(github.ref_name, 'release/') || startsWith(github.ref_name, 'hotfix/')
         env:
           GH_TOKEN: ${{ secrets.POCQTQUICK_AUTO_PR }}
