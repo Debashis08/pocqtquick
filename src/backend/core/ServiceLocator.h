@@ -5,6 +5,7 @@
 class ServiceLocator {
 public:
     // Global Access Point
+    // this comment is to test the commit message parsing for the release drafter action
     static ServiceLocator& instance() {
         static ServiceLocator _instance;
         return _instance;
