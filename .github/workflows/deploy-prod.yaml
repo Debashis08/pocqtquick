@@ -241,7 +241,8 @@ jobs:
       pull-requests: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Create Sync pull request to main
         if: startsWith(github.ref_name, 'release/') || startsWith(github.ref_name, 'hotfix/')
