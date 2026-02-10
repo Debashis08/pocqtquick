@@ -7,10 +7,10 @@ import App.Backend 1.0
 Item {
     id: root
 
-    property alias bridge: internalViewModel
-
     CounterViewModel {
         id: internalViewModel
+        // 3. INJECTION HAPPENS HERE
+        service: appService 
     }
 
     ColumnLayout {
@@ -18,26 +18,25 @@ Item {
         spacing: 20
 
         Text {
-            text: "Count: " + bridge.count
+            text: "Count: " + internalViewModel.count
             font.pixelSize: 32
             Layout.alignment: Qt.AlignHCenter
         }
 
         RowLayout {
-            spacing: 20
-            // --- FIX: This aligns the entire row of buttons to the center ---
             Layout.alignment: Qt.AlignHCenter
+            spacing: 20
 
             StandardButton {
                 text: "-"
                 backgroundColor: "#dc3545"
-                onClicked: bridge.decrement()
+                onClicked: internalViewModel.decrement()
             }
 
             StandardButton {
                 text: "+"
                 backgroundColor: "#28a745"
-                onClicked: bridge.increment()
+                onClicked: internalViewModel.increment()
             }
         }
 
@@ -59,7 +58,6 @@ Item {
         }
 
         Label {
-            text: "Client ID: " + (bridge.clientId ? bridge.clientId : "Not Found")
             Layout.alignment: Qt.AlignHCenter
             font.pixelSize: 12
             color: "#555"
@@ -71,8 +69,8 @@ Item {
             onClicked: {
                 console.log("--------------------------------")
                 console.log("Fetching secrets from C++ backend:")
-                console.log("Client ID:      " + bridge.clientId)
-                console.log("Client Secret: " + bridge.clientSecret)
+                console.log("Client ID:      " + internalViewModel.clientId)
+                console.log("Client Secret: " + internalViewModel.clientSecret)
                 console.log("--------------------------------")
             }
         }
