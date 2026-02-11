@@ -13,10 +13,20 @@ endif()
 # 2. Define Source Files (Added Interface here)
 set(BACKEND_SOURCES
     interfaces/ICounterService.h
+    
     core/LoggerService.h
     core/LoggerService.cpp
+    
+    # --- UPDATED FILE NAMES ---
+    core/ServiceProvider.h         
+    core/ServiceProvider.cpp       
+    core/ServiceInitializer.h     
+    core/ServiceInitializer.cpp   
+    # --------------------------
+    
     services/CounterService.cpp
     services/CounterService.h
+    
     viewmodels/CounterViewModel.cpp
     viewmodels/CounterViewModel.h
 )

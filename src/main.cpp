@@ -1,25 +1,18 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
-#include <QQmlContext>
-#include "core/LoggerService.h"
-#include "services/CounterService.h" // Include Concrete Service
+#include "core/ServiceInitializer.h" // <-- UPDATED
 
 int main(int argc, char *argv[])
 {
     qputenv("QT_QUICK_CONTROLS_CONF", ":/pocqtquick-qtquickcontrols2.conf");
     QGuiApplication app(argc, argv);
 
-    LoggerService::init();
-    qInfo() << "Application Starting";
-
-    // 1. Create the Service (Lives for the whole app)
-    CounterService appCounterService;
+    // --- UPDATED ---
+    ServiceInitializer initializer;
+    initializer.initialize();
+    // ---------------
 
     QQmlApplicationEngine engine;
-
-    // 2. Inject into QML Context
-    engine.rootContext()->setContextProperty("appService", &appCounterService);
-
     engine.addImportPath(":/qt/qml");
     engine.loadFromModule("App.Ui", "Main");
 

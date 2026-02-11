@@ -9,8 +9,8 @@ Item {
 
     CounterViewModel {
         id: internalViewModel
-        // 3. INJECTION HAPPENS HERE
-        service: appService 
+        
+        service: ServiceProvider.counter
     }
 
     ColumnLayout {
@@ -58,6 +58,7 @@ Item {
         }
 
         Label {
+            text: "Client ID: " + (internalViewModel.clientId ? internalViewModel.clientId : "Not Found")
             Layout.alignment: Qt.AlignHCenter
             font.pixelSize: 12
             color: "#555"
