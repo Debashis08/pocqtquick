@@ -10,6 +10,8 @@ if(NOT GOOGLE_CLIENT_ID OR NOT GOOGLE_CLIENT_SECRET)
     message(WARNING "BackendLib: Google OAuth keys are missing. Auth will not work.")
 endif()
 
+find_package(Qt6 REQUIRED COMPONENTS Quick Qml)
+
 # 2. Define Source Files (Added Interface here)
 set(BACKEND_SOURCES
     interfaces/ICounterService.h
@@ -54,4 +56,8 @@ target_include_directories(BackendLib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/viewmodels
 )
 
-target_link_libraries(BackendLib PRIVATE Qt6::Quick)
+target_link_libraries(BackendLib 
+    PRIVATE
+    Qt6::Quick
+    Qt6::Qml
+)

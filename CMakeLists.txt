@@ -36,5 +36,5 @@ set(QML_IMPORT_PATH "${CMAKE_BINARY_DIR}/staging" CACHE STRING "Qt Creator QML P
 
 
 # Add Tests (Only if testing is enabled)
-# enable_testing()
-# add_subdirectory(tests)
+enable_testing()
+add_subdirectory(tests)

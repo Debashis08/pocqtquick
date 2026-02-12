@@ -45,11 +45,11 @@ void CounterViewModel::decrement() {
 
 QString CounterViewModel::clientId() const {
     // Safety check is crucial because this IS called when m_service is null
-    if (!m_service) return "Initializing...";
+    if (!m_service) return "No Service";
     return QString::fromStdString(m_service->getClientId());
 }
 
 QString CounterViewModel::clientSecret() const {
-    if (!m_service) return "Initializing...";
+    if (!m_service) return "No Service";
     return QString::fromStdString(m_service->getClientSecret());
 }
