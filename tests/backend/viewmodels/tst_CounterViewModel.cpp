@@ -1,24 +1,73 @@
 #include <QtTest>
-#include <QSignalSpy>
 #include "viewmodels/CounterViewModel.h"
+#include "interfaces/ICounterService.h"
 
+// --- 1. THE MOCK SERVICE ---
+// A fake implementation that tracks calls
+class MockCounterService : public ICounterService {
+    Q_OBJECT
+public:
+    int mockCount = 0;
+    bool incrementCalled = false;
+    bool decrementCalled = false;
+
+    void increment() override {
+        incrementCalled = true;
+        mockCount++;
+        emit countChanged(mockCount);
+    }
+
+    void decrement() override {
+        decrementCalled = true;
+        mockCount--;
+        emit countChanged(mockCount);
+    }
+
+    int count() const override { return mockCount; }
+
+    std::string getClientId() const override { return "test_id"; }
+    std::string getClientSecret() const override { return "test_secret"; }
+};
+
+// --- 2. THE TEST CLASS ---
 class TestCounterViewModel : public QObject {
     Q_OBJECT
 
 private slots:
-    void testSignals() {
-        CounterViewModel bridge;
-        
-        // Create a spy to watch the 'countChanged' signal
-        QSignalSpy spy(&bridge, &CounterViewModel::countChanged);
-        QVERIFY(spy.isValid());
+    void test_injection_updates_ui() {
+        CounterViewModel vm;
+        MockCounterService mock;
+        mock.mockCount = 10;
 
-        // Trigger the action
-        bridge.increment();
+        // INJECT MOCK
+        vm.setService(&mock);
 
-        // Check if signal was emitted successfully.
-        QCOMPARE(spy.count(), 1);
-        QCOMPARE(bridge.count(), 1);
+        // Verify UI Properties updated
+        QCOMPARE(vm.count(), 10);
+        QCOMPARE(vm.clientId(), "test_id");
+    }
+
+    void test_user_interaction() {
+        CounterViewModel vm;
+        MockCounterService mock;
+        vm.setService(&mock);
+
+        // Simulate User Clicking "+"
+        vm.increment();
+
+        // Verify the mock was called
+        QVERIFY(mock.incrementCalled);
+        QCOMPARE(vm.count(), 1);
+    }
+
+    void test_handles_null_service() {
+        CounterViewModel vm;
+        vm.setService(nullptr);
+
+        // Should not crash
+        vm.increment();
+        QCOMPARE(vm.count(), 0);
+        QCOMPARE(vm.clientId(), "No Service");
     }
 };
 

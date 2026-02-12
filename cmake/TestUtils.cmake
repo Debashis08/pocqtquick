@@ -3,7 +3,8 @@ function(add_backend_test test_name file_path)
 
     target_link_libraries(${test_name} 
         PRIVATE 
-        Qt6::Test 
+        Qt6::Test
+        Qt6::Qml
         BackendLib 
         BackendLibplugin
     )
