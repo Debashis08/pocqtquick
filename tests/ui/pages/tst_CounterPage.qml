@@ -1,54 +1,70 @@
 import QtQuick
-import QtQuick.Layouts
+import QtTest
 import QtQuick.Controls
 import App.Ui 1.0
-import App.Backend 1.0
 
-Item {
-    id: root
-    width: 400; height: 300 // Give it size for testing
+TestCase {
+    name: "CounterPageTests"
+    when: windowShown
+    width: 600
+    height: 600
 
-    CounterViewModel {
-        id: internalViewModel
-        service: ServiceProvider.counter
+    CounterPage {
+        id: page
+        anchors.fill: parent
     }
 
-    ColumnLayout {
-        anchors.centerIn: parent
-        spacing: 20
+    // --- RECURSIVE FIND HELPER ---
+    // Standard function to find items in a deep hierarchy
+    function findChild(parentItem, objectName) {
+        if (!parentItem) return null;
 
-        Text {
-            // --- ADD THIS ---
-            objectName: "countLabel"
-            // ----------------
-            text: "Count: " + internalViewModel.count
-            font.pixelSize: 32
-            Layout.alignment: Qt.AlignHCenter
+        // 1. Check direct children
+        var children = parentItem.children;
+        for (var i = 0; i < children.length; i++) {
+            var child = children[i];
+            if (child.objectName === objectName) return child;
+
+            // 2. Recurse deep
+            var result = findChild(child, objectName);
+            if (result) return result;
         }
+        return null;
+    }
 
-        RowLayout {
-            Layout.alignment: Qt.AlignHCenter
-            spacing: 20
+    // --- TEST CASES ---
 
-            StandardButton {
-                // --- ADD THIS ---
-                objectName: "decrementButton"
-                // ----------------
-                text: "-"
-                backgroundColor: "#dc3545"
-                onClicked: internalViewModel.decrement()
-            }
+    function test_defaults() {
+        var label = findChild(page, "countLabel");
 
-            StandardButton {
-                // --- ADD THIS ---
-                objectName: "incrementButton"
-                // ----------------
-                text: "+"
-                backgroundColor: "#28a745"
-                onClicked: internalViewModel.increment()
-            }
-        }
+        // Use 'verify' to stop test if null (avoids crash)
+        verify(label !== null, "Could not find countLabel");
+        compare(label.text, "Count: 0", "Initial mock count should be 0");
+    }
 
-        // ... (rest of file remains same)
+    function test_increment() {
+        var btn = findChild(page, "incrementButton");
+        var label = findChild(page, "countLabel");
+
+        verify(btn !== null, "Could not find incrementButton");
+        verify(label !== null, "Could not find countLabel");
+
+        // Simulate Click
+        mouseClick(btn);
+
+        // Verify Update
+        compare(label.text, "Count: 1", "Count should increase to 1");
+    }
+
+    function test_decrement() {
+        var btn = findChild(page, "decrementButton");
+        var label = findChild(page, "countLabel");
+
+        verify(btn !== null, "Could not find decrementButton");
+
+        // Logic: 1 (from previous test) - 1 = 0
+        mouseClick(btn);
+
+        compare(label.text, "Count: 0", "Count should decrease to 0");
     }
 }

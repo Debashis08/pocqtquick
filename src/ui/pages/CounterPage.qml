@@ -9,7 +9,6 @@ Item {
 
     CounterViewModel {
         id: internalViewModel
-        
         service: ServiceProvider.counter
     }
 
@@ -18,6 +17,9 @@ Item {
         spacing: 20
 
         Text {
+            // --- ADDED ---
+            objectName: "countLabel"
+            // -------------
             text: "Count: " + internalViewModel.count
             font.pixelSize: 32
             Layout.alignment: Qt.AlignHCenter
@@ -28,12 +30,18 @@ Item {
             spacing: 20
 
             StandardButton {
+                // --- ADDED ---
+                objectName: "decrementButton"
+                // -------------
                 text: "-"
                 backgroundColor: "#dc3545"
                 onClicked: internalViewModel.decrement()
             }
 
             StandardButton {
+                // --- ADDED ---
+                objectName: "incrementButton"
+                // -------------
                 text: "+"
                 backgroundColor: "#28a745"
                 onClicked: internalViewModel.increment()
