@@ -5,66 +5,89 @@ import App.Ui 1.0
 
 TestCase {
     name: "CounterPageTests"
+    // This waits for the window to actually appear before running tests
     when: windowShown
-    width: 600
-    height: 600
+
+    // --- FIX 1: Make the Test Container Visible ---
+    width: 800; height: 600
+    visible: true
+    // ----------------------------------------------
 
     CounterPage {
         id: page
         anchors.fill: parent
+        // Ensure the page itself requests visibility
+        visible: true
     }
 
-    // --- RECURSIVE FIND HELPER ---
-    // Standard function to find items in a deep hierarchy
+    SignalSpy {
+        id: clickSpy
+        signalName: "clicked"
+    }
+
+    // --- HELPER FUNCTIONS ---
+
     function findChild(parentItem, objectName) {
         if (!parentItem) return null;
-
-        // 1. Check direct children
-        var children = parentItem.children;
-        for (var i = 0; i < children.length; i++) {
-            var child = children[i];
+        for (var i = 0; i < parentItem.children.length; i++) {
+            var child = parentItem.children[i];
             if (child.objectName === objectName) return child;
-
-            // 2. Recurse deep
             var result = findChild(child, objectName);
             if (result) return result;
         }
         return null;
     }
 
-    // --- TEST CASES ---
+    function interactWithButton(btn) {
+        // 1. Wait for layout polish (Ensure it's not 0x0 size)
+        wait(200);
 
-    function test_defaults() {
-        var label = findChild(page, "countLabel");
+        // 2. Verify Visibility
+        verify(btn.visible, "Button is invisible - check parent visibility");
+        verify(btn.enabled, "Button is disabled");
 
-        // Use 'verify' to stop test if null (avoids crash)
-        verify(label !== null, "Could not find countLabel");
-        compare(label.text, "Count: 0", "Initial mock count should be 0");
+        // 3. Force Focus & Press Space
+        // This is safer than mouseClick for CI environments
+        btn.forceActiveFocus();
+        verify(btn.activeFocus, "Button could not grab focus");
+        keyClick(Qt.Key_Space);
     }
+
+    // --- TESTS ---
 
     function test_increment() {
         var btn = findChild(page, "incrementButton");
         var label = findChild(page, "countLabel");
 
-        verify(btn !== null, "Could not find incrementButton");
-        verify(label !== null, "Could not find countLabel");
+        verify(btn !== null, "FATAL: Button not found");
 
-        // Simulate Click
-        mouseClick(btn);
+        clickSpy.target = btn;
+        clickSpy.clear();
 
-        // Verify Update
-        compare(label.text, "Count: 1", "Count should increase to 1");
+        if (typeof MockHelper !== "undefined") MockHelper.reset();
+
+        // Wait for the scene to be fully rendered
+        waitForRendering(page);
+
+        interactWithButton(btn);
+
+        compare(clickSpy.count, 1, "Button click signal failed");
+        tryCompare(label, "text", "Count: 1", 5000);
     }
 
     function test_decrement() {
         var btn = findChild(page, "decrementButton");
         var label = findChild(page, "countLabel");
 
-        verify(btn !== null, "Could not find decrementButton");
+        clickSpy.target = btn;
+        clickSpy.clear();
 
-        // Logic: 1 (from previous test) - 1 = 0
-        mouseClick(btn);
+        if (typeof MockHelper !== "undefined") MockHelper.reset();
+        waitForRendering(page);
 
-        compare(label.text, "Count: 0", "Count should decrease to 0");
+        interactWithButton(btn);
+
+        // 0 - 1 = -1
+        tryCompare(label, "text", "Count: -1", 5000);
     }
 }

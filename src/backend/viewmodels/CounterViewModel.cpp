@@ -1,3 +1,4 @@
+#include <QDebug>
 #include "CounterViewModel.h"
 
 CounterViewModel::CounterViewModel(QObject *parent) 
@@ -14,16 +15,18 @@ void CounterViewModel::setService(ICounterService* newService) {
     if (m_service) disconnect(m_service, nullptr, this, nullptr);
 
     m_service = newService;
-    emit serviceChanged();
 
     // Connect new
     if (m_service) {
-        connect(m_service, &ICounterService::countChanged, 
+        bool isSuccess = connect(m_service, &ICounterService::countChanged,
                 this, &CounterViewModel::onCountChanged);
+        qDebug()<< "Connection status"<<isSuccess;
         
         // Initialize state
         onCountChanged(m_service->count());
     }
+
+    emit serviceChanged();
 }
 
 void CounterViewModel::onCountChanged(int newCount) {

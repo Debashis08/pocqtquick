@@ -17,36 +17,38 @@ Item {
         spacing: 20
 
         Text {
-            // --- ADDED ---
-            objectName: "countLabel"
-            // -------------
-            text: "Count: " + internalViewModel.count
-            font.pixelSize: 32
-            Layout.alignment: Qt.AlignHCenter
-        }
+                    objectName: "countLabel"
+                    text: "Count: " + internalViewModel.count
+                    font.pixelSize: 32
+                    Layout.alignment: Qt.AlignHCenter
+                }
 
-        RowLayout {
-            Layout.alignment: Qt.AlignHCenter
-            spacing: 20
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 20
 
-            StandardButton {
-                // --- ADDED ---
-                objectName: "decrementButton"
-                // -------------
-                text: "-"
-                backgroundColor: "#dc3545"
-                onClicked: internalViewModel.decrement()
-            }
+                    StandardButton {
+                        objectName: "decrementButton"
+                        text: "-"
+                        backgroundColor: "#dc3545"
+                        onClicked: internalViewModel.decrement()
 
-            StandardButton {
-                // --- ADDED ---
-                objectName: "incrementButton"
-                // -------------
-                text: "+"
-                backgroundColor: "#28a745"
-                onClicked: internalViewModel.increment()
-            }
-        }
+                        // --- FIX: Give it a size so the test can hit it ---
+                        Layout.preferredWidth: 60
+                        Layout.preferredHeight: 40
+                    }
+
+                    StandardButton {
+                        objectName: "incrementButton"
+                        text: "+"
+                        backgroundColor: "#28a745"
+                        onClicked: internalViewModel.increment()
+
+                        // --- FIX: Give it a size so the test can hit it ---
+                        Layout.preferredWidth: 60
+                        Layout.preferredHeight: 40
+                    }
+                }
 
         // --- Secrets Demonstration Section ---
         Rectangle {
