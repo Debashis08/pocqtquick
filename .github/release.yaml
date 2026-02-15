@@ -12,6 +12,8 @@ categories:
   - title: 'Logic & Backend'
     labels:
       - 'backend'
+    exclude-labels:
+      - 'core'
 
   - title: 'Core System Updates'
     labels:

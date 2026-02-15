@@ -1,17 +1,17 @@
 #pragma once
-#include <string> // Required for std::string
+#include "ICounterService.h" // Clean include thanks to CMake
 
-class CounterService {
+class CounterService : public ICounterService {
+    Q_OBJECT
 public:
-    CounterService();
+    explicit CounterService(QObject* parent = nullptr);
 
-    void increment();
-    void decrement();
-    int value() const;
+    void increment() override;
+    void decrement() override;
+    int count() const override;
 
-    // --- ADD THESE ---
-    std::string getClientId() const;
-    std::string getClientSecret() const;
+    std::string getClientId() const override;
+    std::string getClientSecret() const override;
 
 private:
     int m_count;
