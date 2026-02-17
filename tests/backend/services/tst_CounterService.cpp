@@ -1,16 +1,19 @@
 #include <QtTest>
 #include "services/CounterService.h"
 
-class TestCounterService : public QObject {
+class TestCounterService : public QObject
+{
     Q_OBJECT
 
 private slots:
-    void test_initial_value() {
+    void test_initial_value()
+    {
         CounterService service;
         QCOMPARE(service.count(), 0);
     }
 
-    void test_increment() {
+    void test_increment()
+    {
         CounterService service;
 
         // Spy on the signal to ensure it fires
@@ -23,7 +26,8 @@ private slots:
         QCOMPARE(spy.takeFirst().at(0).toInt(), 1); // Argument was '1'
     }
 
-    void test_decrement() {
+    void test_decrement()
+    {
         CounterService service;
         service.increment(); // 1
         service.decrement(); // 0

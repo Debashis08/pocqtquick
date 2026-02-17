@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-# 1. Load Secrets & Environment Variables
+# Load Secrets & Environment Variables
 include("${CMAKE_SOURCE_DIR}/Secrets.local.cmake" OPTIONAL)
 
 set(GOOGLE_CLIENT_ID "$ENV{GOOGLE_CLIENT_ID}")
@@ -12,19 +12,17 @@ endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Quick Qml)
 
-# 2. Define Source Files (Added Interface here)
+# Define Source Files
 set(BACKEND_SOURCES
     interfaces/ICounterService.h
     
     core/LoggerService.h
     core/LoggerService.cpp
     
-    # --- UPDATED FILE NAMES ---
     core/ServiceProvider.h         
     core/ServiceProvider.cpp       
     core/ServiceInitializer.h     
     core/ServiceInitializer.cpp   
-    # --------------------------
     
     services/CounterService.cpp
     services/CounterService.h
@@ -33,7 +31,7 @@ set(BACKEND_SOURCES
     viewmodels/CounterViewModel.h
 )
 
-# 3. Create QML Module
+# Create QML Module
 qt_add_qml_module(BackendLib
     STATIC
     URI "App.Backend"
@@ -41,16 +39,16 @@ qt_add_qml_module(BackendLib
     SOURCES ${BACKEND_SOURCES}
 )
 
-# 4. Inject Secrets into C++
+# Inject Secrets into C++
 target_compile_definitions(BackendLib PRIVATE
     CLIENT_ID="${GOOGLE_CLIENT_ID}"
     CLIENT_SECRET="${GOOGLE_CLIENT_SECRET}"
 )
 
-# 5. Include Directories (Added 'interfaces')
+# Include Directories
 target_include_directories(BackendLib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/interfaces  # <--- NEW
+    ${CMAKE_CURRENT_SOURCE_DIR}/interfaces
     ${CMAKE_CURRENT_SOURCE_DIR}/core
     ${CMAKE_CURRENT_SOURCE_DIR}/services
     ${CMAKE_CURRENT_SOURCE_DIR}/viewmodels

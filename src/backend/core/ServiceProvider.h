@@ -4,10 +4,12 @@
 #include "interfaces/ICounterService.h"
 
 // The new name for AppRegistry
-class ServiceProvider : public QObject {
+class ServiceProvider : public QObject
+{
     Q_OBJECT
     QML_ELEMENT
-    QML_SINGLETON // QML will now know this as "ServiceProvider"
+    // QML will now know this as "ServiceProvider"
+    QML_SINGLETON
 
     Q_PROPERTY(ICounterService* counter READ counter CONSTANT)
 
@@ -20,5 +22,5 @@ public:
 
 private:
     explicit ServiceProvider(QObject* parent = nullptr) : QObject(parent) {}
-    ICounterService* m_counterService = nullptr;
+    ICounterService* _counterService = nullptr;
 };

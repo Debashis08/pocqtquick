@@ -1,16 +1,17 @@
 #pragma once
 #include <QObject>
 #include <QQmlEngine>
-#include "ICounterService.h" 
+#include "ICounterService.h"
 
-class CounterViewModel : public QObject {
+class CounterViewModel : public QObject
+{
     Q_OBJECT
     QML_ELEMENT
     
-    // 1. Dependency Injection Slot
+    // Dependency Injection Slot
     Q_PROPERTY(ICounterService* service READ service WRITE setService NOTIFY serviceChanged)
 
-    // 2. UI Properties
+    // UI Properties
     Q_PROPERTY(int count READ count NOTIFY countChanged)
     Q_PROPERTY(QString clientId READ clientId NOTIFY serviceChanged)
     Q_PROPERTY(QString clientSecret READ clientSecret NOTIFY serviceChanged)
@@ -38,6 +39,7 @@ signals:
     void countChanged();
 
 private:
-    ICounterService* m_service;
-    int m_cachedCount; // Optional: Local cache for fast UI reads
+    ICounterService* _service;
+    // Optional: Local cache for fast UI reads
+    int _cachedCount;
 };

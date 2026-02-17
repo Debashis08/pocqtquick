@@ -2,11 +2,12 @@
 #include "ServiceProvider.h" // Update include!
 #include "LoggerService.h"
 
-void ServiceInitializer::initialize() {
-    LoggerService::init();
+void ServiceInitializer::initialize()
+{
+    LoggerService::initialize();
     
-    m_counterService = std::make_unique<CounterService>();
+    _counterService = std::make_unique<CounterService>();
     
     // Inject into the new ServiceProvider
-    ServiceProvider::instance().setCounterService(m_counterService.get());
+    ServiceProvider::instance().setCounterService(_counterService.get());
 }

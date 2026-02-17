@@ -6,10 +6,11 @@
 #include <QTextStream>
 #include <iostream>
 
-class LoggerService {
+class LoggerService
+{
 public:
     // Call this once in main.cpp
-    static void init();
+    static void initialize();
 
 private:
     // The actual handler that Qt calls
@@ -19,5 +20,5 @@ private:
     static void cleanOldLogs(const QString &logFolderPath);
 
     // Pointer to the current log file
-    static QFile* m_logFile;
+    static QFile* _logFile;
 };

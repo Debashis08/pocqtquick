@@ -1,7 +1,8 @@
 #pragma once
 #include "ICounterService.h" // Clean include thanks to CMake
 
-class CounterService : public ICounterService {
+class CounterService : public ICounterService
+{
     Q_OBJECT
 public:
     explicit CounterService(QObject* parent = nullptr);
@@ -14,5 +15,5 @@ public:
     std::string getClientSecret() const override;
 
 private:
-    int m_count;
+    int _count;
 };

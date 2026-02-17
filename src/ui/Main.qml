@@ -1,8 +1,10 @@
 import QtQuick
 import QtQuick.Window
-import "pages" // Import the folder to access CounterPage
+// Import the folder to access CounterPage
+import "pages"
 
-Window {
+Window
+{
     width: 640
     height: 480
     visible: true
