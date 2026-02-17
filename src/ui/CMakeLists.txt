@@ -1,14 +1,11 @@
-# REMOVE THIS LINE:
-# qt_add_library(UiLib STATIC) 
-
-# USE THIS INSTEAD (Everything in one command):
 qt_add_qml_module(UiLib
-    STATIC                  # <--- Explicitly state it is a STATIC lib here
+    # Explicitly state it is a STATIC lib here
+    STATIC
     URI "App.Ui"
     VERSION 1.0
-    RESOURCE_PREFIX "/qt/qml"  # <--- Standardizes the resource path
+    # Standardizes the resource path
+    RESOURCE_PREFIX "/qt/qml"
 
-    # --- ADD THIS LINE ---
     # Redirect build output to a staging folder that matches the URI
     # OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/staging/App/Ui"
 

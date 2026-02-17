@@ -3,33 +3,36 @@ import QtTest
 import QtQuick.Controls
 import App.Ui 1.0
 
-TestCase {
+TestCase
+{
     name: "CounterPageTests"
     // This waits for the window to actually appear before running tests
     when: windowShown
 
-    // --- FIX 1: Make the Test Container Visible ---
+    // Make the Test Container Visible
     width: 800; height: 600
     visible: true
-    // ----------------------------------------------
 
-    CounterPage {
+    CounterPage
+    {
         id: page
         anchors.fill: parent
         // Ensure the page itself requests visibility
         visible: true
     }
 
-    SignalSpy {
+    SignalSpy
+    {
         id: clickSpy
         signalName: "clicked"
     }
 
-    // --- HELPER FUNCTIONS ---
-
-    function findChild(parentItem, objectName) {
+    // helper method
+    function findChild(parentItem, objectName)
+    {
         if (!parentItem) return null;
-        for (var i = 0; i < parentItem.children.length; i++) {
+        for (var i = 0; i < parentItem.children.length; i++)
+        {
             var child = parentItem.children[i];
             if (child.objectName === objectName) return child;
             var result = findChild(child, objectName);
@@ -38,7 +41,8 @@ TestCase {
         return null;
     }
 
-    function interactWithButton(btn) {
+    function interactWithButton(btn)
+    {
         // 1. Wait for layout polish (Ensure it's not 0x0 size)
         wait(200);
 
@@ -53,9 +57,9 @@ TestCase {
         keyClick(Qt.Key_Space);
     }
 
-    // --- TESTS ---
-
-    function test_increment() {
+    // Tests
+    function test_increment()
+    {
         var btn = findChild(page, "incrementButton");
         var label = findChild(page, "countLabel");
 
@@ -75,7 +79,8 @@ TestCase {
         tryCompare(label, "text", "Count: 1", 5000);
     }
 
-    function test_decrement() {
+    function test_decrement()
+    {
         var btn = findChild(page, "decrementButton");
         var label = findChild(page, "countLabel");
 

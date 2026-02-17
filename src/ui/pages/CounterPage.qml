@@ -4,54 +4,62 @@ import QtQuick.Controls
 import App.Ui 1.0
 import App.Backend 1.0
 
-Item {
+Item
+{
     id: root
 
-    CounterViewModel {
+    CounterViewModel
+    {
         id: internalViewModel
         service: ServiceProvider.counter
     }
 
-    ColumnLayout {
+    ColumnLayout
+    {
         anchors.centerIn: parent
         spacing: 20
 
-        Text {
-                    objectName: "countLabel"
-                    text: "Count: " + internalViewModel.count
-                    font.pixelSize: 32
-                    Layout.alignment: Qt.AlignHCenter
-                }
+        Text
+        {
+            objectName: "countLabel"
+            text: "Count: " + internalViewModel.count
+            font.pixelSize: 32
+            Layout.alignment: Qt.AlignHCenter
+        }
 
-                RowLayout {
-                    Layout.alignment: Qt.AlignHCenter
-                    spacing: 20
+        RowLayout
+        {
+            Layout.alignment: Qt.AlignHCenter
+            spacing: 20
 
-                    StandardButton {
-                        objectName: "decrementButton"
-                        text: "-"
-                        backgroundColor: "#dc3545"
-                        onClicked: internalViewModel.decrement()
+            StandardButton
+            {
+                objectName: "decrementButton"
+                text: "-"
+                backgroundColor: "#dc3545"
+                onClicked: internalViewModel.decrement()
 
-                        // --- FIX: Give it a size so the test can hit it ---
-                        Layout.preferredWidth: 60
-                        Layout.preferredHeight: 40
-                    }
+                // --- FIX: Give it a size so the test can hit it ---
+                Layout.preferredWidth: 60
+                Layout.preferredHeight: 40
+            }
 
-                    StandardButton {
-                        objectName: "incrementButton"
-                        text: "+"
-                        backgroundColor: "#28a745"
-                        onClicked: internalViewModel.increment()
+            StandardButton
+            {
+                objectName: "incrementButton"
+                text: "+"
+                backgroundColor: "#28a745"
+                onClicked: internalViewModel.increment()
 
-                        // --- FIX: Give it a size so the test can hit it ---
-                        Layout.preferredWidth: 60
-                        Layout.preferredHeight: 40
-                    }
-                }
+                // --- FIX: Give it a size so the test can hit it ---
+                Layout.preferredWidth: 60
+                Layout.preferredHeight: 40
+            }
+        }
 
         // --- Secrets Demonstration Section ---
-        Rectangle {
+        Rectangle
+        {
             Layout.fillWidth: true
             Layout.preferredWidth: 200
             Layout.alignment: Qt.AlignHCenter
@@ -60,24 +68,28 @@ Item {
             Layout.topMargin: 20
         }
 
-        Label {
+        Label
+        {
             text: "OAuth Configuration (From CMake)"
             font.bold: true
             Layout.alignment: Qt.AlignHCenter
             color: "grey"
         }
 
-        Label {
+        Label
+        {
             text: "Client ID: " + (internalViewModel.clientId ? internalViewModel.clientId : "Not Found")
             Layout.alignment: Qt.AlignHCenter
             font.pixelSize: 12
             color: "#555"
         }
 
-        Button {
+        Button
+        {
             text: "Log Secret to Console"
             Layout.alignment: Qt.AlignHCenter
-            onClicked: {
+            onClicked:
+            {
                 console.log("--------------------------------")
                 console.log("Fetching secrets from C++ backend:")
                 console.log("Client ID:      " + internalViewModel.clientId)

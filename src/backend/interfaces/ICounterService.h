@@ -2,7 +2,8 @@
 #include <QObject>
 #include <string>
 
-class ICounterService : public QObject {
+class ICounterService : public QObject
+{
     Q_OBJECT
 public:
     virtual ~ICounterService() = default;

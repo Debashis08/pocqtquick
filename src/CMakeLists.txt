@@ -19,7 +19,9 @@ target_link_libraries(appCounterApp
     Qt6::Quick
     Qt6::QuickControls2
     BackendLib
-    BackendLibplugin   # <--- CRITICAL: Must be here
+    # critical
+    BackendLibplugin
     UiLib
-    UiLibplugin        # <--- CRITICAL: Must be here
+    #critical
+    UiLibplugin
 )

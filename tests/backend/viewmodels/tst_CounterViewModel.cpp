@@ -2,39 +2,54 @@
 #include "viewmodels/CounterViewModel.h"
 #include "interfaces/ICounterService.h"
 
-// --- 1. THE MOCK SERVICE ---
+// mock service
 // A fake implementation that tracks calls
-class MockCounterService : public ICounterService {
+class MockCounterService : public ICounterService
+{
     Q_OBJECT
 public:
     int mockCount = 0;
     bool incrementCalled = false;
     bool decrementCalled = false;
 
-    void increment() override {
+    void increment() override
+    {
         incrementCalled = true;
         mockCount++;
         emit countChanged(mockCount);
     }
 
-    void decrement() override {
+    void decrement() override
+    {
         decrementCalled = true;
         mockCount--;
         emit countChanged(mockCount);
     }
 
-    int count() const override { return mockCount; }
+    int count() const override
+    {
+        return mockCount;
+    }
 
-    std::string getClientId() const override { return "test_id"; }
-    std::string getClientSecret() const override { return "test_secret"; }
+    std::string getClientId() const override
+    {
+        return "test_id";
+    }
+
+    std::string getClientSecret() const override
+    {
+        return "test_secret";
+    }
 };
 
-// --- 2. THE TEST CLASS ---
-class TestCounterViewModel : public QObject {
+// The test class
+class TestCounterViewModel : public QObject
+{
     Q_OBJECT
 
 private slots:
-    void test_injection_updates_ui() {
+    void test_injection_updates_ui()
+    {
         CounterViewModel vm;
         MockCounterService mock;
         mock.mockCount = 10;
@@ -47,7 +62,8 @@ private slots:
         QCOMPARE(vm.clientId(), "test_id");
     }
 
-    void test_user_interaction() {
+    void test_user_interaction()
+    {
         CounterViewModel vm;
         MockCounterService mock;
         vm.setService(&mock);
@@ -60,7 +76,8 @@ private slots:
         QCOMPARE(vm.count(), 1);
     }
 
-    void test_handles_null_service() {
+    void test_handles_null_service()
+    {
         CounterViewModel vm;
         vm.setService(nullptr);
 

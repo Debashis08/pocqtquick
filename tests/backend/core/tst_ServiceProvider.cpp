@@ -1,12 +1,15 @@
 #include <QtTest>
 #include "core/ServiceProvider.h"
-#include "services/CounterService.h" // Needed for a real object to test with
+// Needed for a real object to test with
+#include "services/CounterService.h"
 
-class TestServiceProvider : public QObject {
+class TestServiceProvider : public QObject
+{
     Q_OBJECT
 
 private slots:
-    void test_singleton_behavior() {
+    void test_singleton_behavior()
+    {
         // Verify multiple calls return the same memory address
         auto* instance1 = &ServiceProvider::instance();
         auto* instance2 = &ServiceProvider::instance();
@@ -14,7 +17,8 @@ private slots:
         QCOMPARE(instance1, instance2);
     }
 
-    void test_service_holding() {
+    void test_service_holding()
+    {
         ServiceProvider& provider = ServiceProvider::instance();
         CounterService service;
 
