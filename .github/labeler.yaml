@@ -1,4 +1,4 @@
-# FRONTEND (QML)
+# Ui changes
 ui:
   - changed-files:
       - any-glob-to-any-file: 'src/ui/**'
@@ -6,35 +6,35 @@ ui:
       - any-glob-to-any-file: '*.qrc'
       - any-glob-to-any-file: '*.conf'
 
-# BACKEND (C++)
-# Business Logic (Services) and Glue Code (ViewModels)
+# Backend changes
 backend:
   - changed-files:
       - any-glob-to-any-file: 'src/backend/**'
       - any-glob-to-any-file: 'tests/backend/**'
 
-# Core Infrastructure (Logging, Service Locator)
+# Core Infrastructure changes
 core:
   - changed-files:
       - any-glob-to-any-file: 'src/backend/core/**'
 
-# DEPLOYMENT & BUILD
+# Installer changes
 installer:
   - changed-files:
       - any-glob-to-any-file: 'installer/**'
 
+# Build system changes — fires ONLY when every changed file is a cmake file
 build-system:
   - changed-files:
-      - any-glob-to-any-file: 'cmake/**'
-      - any-glob-to-any-file: 'scripts/**'
-      - any-glob-to-any-file: '**/CMakeLists.txt'
+      - all-globs-to-all-files: '**/CMakeLists.txt'  # all files must be CMakeLists.txt
+  - changed-files:
+      - all-globs-to-all-files: '**/*.cmake'          # OR all files must be *.cmake
 
-# Tooling: Github workflows
+# Workflow changes
 workflows:
   - changed-files:
       - any-glob-to-any-file: '.github/**'
 
-# Documentation: Root level MD files
+# Documentation changes
 documentation:
   - changed-files:
       - any-glob-to-any-file: '*.md'
